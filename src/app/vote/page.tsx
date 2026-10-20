@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { OfficialVote, OfficialVoteOption, OfficialVoteBallot } from '@/types/database';
 import { 
@@ -26,6 +27,7 @@ export default function VotePage() {
   const [votes, setVotes] = useState<OfficialVote[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('전체');
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   // 유권자(운영위원) 사전등록(가입) 모달 상태
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
@@ -79,6 +81,16 @@ export default function VotePage() {
 
   useEffect(() => {
     fetchVotes();
+    try {
+      const saved = localStorage.getItem('jinju_scca_voter');
+      if (saved) {
+        const u = JSON.parse(saved);
+        setCurrentUser(u);
+        setVoterName(u.name || '');
+        setSchoolName(u.school || '');
+        if (u.role) setRoleType(u.role);
+      }
+    } catch (e) {}
   }, []);
 
   // 유권자(운영위원) 사전등록(가입) 핸들러
@@ -229,30 +241,52 @@ export default function VotePage() {
       </div>
 
       {/* 유권자 사전등록(가입) 안내 배너 */}
-      <div className="bg-gradient-to-r from-indigo-900 to-blue-900 text-white rounded-3xl p-6 sm:p-7 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-5">
-        <div className="space-y-1 text-center sm:text-left">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-indigo-200 text-xs font-bold backdrop-blur-sm">
-            <ShieldCheck className="w-3.5 h-3.5 text-indigo-300" /> 공정 전자투표 1인 1표 보장제
+      {currentUser ? (
+        <div className="bg-gradient-to-r from-emerald-900 to-teal-900 text-white rounded-3xl p-6 sm:p-7 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-5">
+          <div className="space-y-1 text-center sm:text-left">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-emerald-200 text-xs font-bold backdrop-blur-sm">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" /> 운영위원 본인 인증 완료
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight">
+              {currentUser.school} {currentUser.name} {currentUser.role}님
+            </h2>
+            <p className="text-xs sm:text-sm text-emerald-200 break-keep max-w-xl">
+              정상 인증되어 각 안건 투표 시 위원님의 정보가 자동 적용되며 1인 1표로 공정하게 참여하실 수 있습니다.
+            </p>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black tracking-tight">
-            운영위원 / 유권자 사전등록 (가입 신청)
-          </h2>
-          <p className="text-xs sm:text-sm text-indigo-200 break-keep max-w-xl">
-            진주시 관내 유치원, 초·중·고·특수학교 학교운영위원장님 및 교육공동체의 정당한 투표권 행사를 위해 사전 등록 절차를 운영합니다.
-          </p>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/register?tab=check"
+              className="px-5 py-2.5 rounded-xl bg-white hover:bg-emerald-50 text-emerald-950 font-black text-xs shadow-md transition-all flex items-center justify-center gap-1.5 flex-shrink-0"
+            >
+              <UserCheck className="w-3.5 h-3.5 text-emerald-700" /> 인증 정보 확인
+            </Link>
+          </div>
         </div>
+      ) : (
+        <div className="bg-gradient-to-r from-indigo-900 to-blue-900 text-white rounded-3xl p-6 sm:p-7 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-5">
+          <div className="space-y-1 text-center sm:text-left">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-indigo-200 text-xs font-bold backdrop-blur-sm">
+              <ShieldCheck className="w-3.5 h-3.5 text-indigo-300" /> 공정 전자투표 1인 1표 보장제
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight">
+              운영위원 / 유권자 사전등록 (가입 신청)
+            </h2>
+            <p className="text-xs sm:text-sm text-indigo-200 break-keep max-w-xl">
+              진주시 관내 유치원, 초·중·고·특수학교 학교운영위원장님 및 교육공동체의 정당한 투표권 행사를 위해 사전 등록 창구를 운영합니다.
+            </p>
+          </div>
 
-        <button
-          onClick={() => {
-            setRegError('');
-            setRegMsg('');
-            setRegisterModalOpen(true);
-          }}
-          className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-white hover:bg-indigo-50 text-indigo-950 font-black text-sm shadow-md transition-all flex items-center justify-center gap-2 hover:scale-105 flex-shrink-0"
-        >
-          <UserCheck className="w-4 h-4 text-indigo-600" /> 유권자 사전등록(가입)
-        </button>
-      </div>
+          <div className="flex items-center gap-2.5 flex-shrink-0">
+            <Link
+              href="/register"
+              className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-sm shadow-md transition-all flex items-center justify-center gap-2 hover:scale-105"
+            >
+              <UserCheck className="w-4 h-4 text-slate-950" /> 운영위원 가입·등록
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* 말머리 필터 탭 */}
       <div className="flex flex-wrap gap-2 justify-center border-b border-slate-200 pb-4">

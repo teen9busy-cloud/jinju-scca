@@ -11,7 +11,8 @@ import {
   AlertTriangle,
   Sparkles,
   History,
-  CheckCircle2
+  CheckCircle2,
+  UserPlus
 } from 'lucide-react';
 
 export default async function HomePage() {
@@ -75,6 +76,22 @@ export default async function HomePage() {
             진주시 관내 유치원, 초등학교, 중학교, 고등학교, 특수학교가 하나 되어<br className="hidden sm:inline" />
             교육 현장의 소중한 목소리를 모으고 교육 자치를 실현합니다.
           </p>
+
+          {/* 주요 퀵 링크 액션 버튼 */}
+          <div className="pt-2 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/register"
+              className="px-5 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-sm shadow-lg transition-all flex items-center gap-2 hover:scale-105"
+            >
+              <UserPlus className="w-4 h-4 text-slate-950" /> 운영위원 가입·등록 (유권자 등록)
+            </Link>
+            <Link
+              href="/vote"
+              className="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm backdrop-blur-sm border border-white/20 transition-all flex items-center gap-2 hover:scale-105"
+            >
+              <Vote className="w-4 h-4 text-indigo-300" /> 전자투표·설문 참여
+            </Link>
+          </div>
         </div>
       </section>
 

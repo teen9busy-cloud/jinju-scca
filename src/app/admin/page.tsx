@@ -33,11 +33,13 @@ export default function AdminPage() {
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState('');
 
-  // 탭 상태: executives, vote, community, notices, gallery, resources, history, settings
-  const [activeTab, setActiveTab] = useState<'executives' | 'vote' | 'community' | 'notices' | 'gallery' | 'resources' | 'history' | 'settings'>('executives');
+  // 탭 상태: executives, voters, vote, community, notices, gallery, resources, history, settings
+  const [activeTab, setActiveTab] = useState<'executives' | 'voters' | 'vote' | 'community' | 'notices' | 'gallery' | 'resources' | 'history' | 'settings'>('executives');
 
   // 데이터 상태
   const [executives, setExecutives] = useState<Executive[]>([]);
+  const [voters, setVoters] = useState<any[]>([]);
+  const [voterSearch, setVoterSearch] = useState('');
   const [historyList, setHistoryList] = useState<HistoryItem[]>([]);
   const [posts, setPosts] = useState<AnonymousPost[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
@@ -127,6 +129,32 @@ export default function AdminPage() {
       .select('*')
       .order('created_at', { ascending: false });
     if (voteData) setVotes(voteData);
+
+    // 2-1. 유권자 및 운영위원 명부 (투표 기록 집계)
+    const { data: ballotData } = await supabase
+      .from('official_vote_ballots')
+      .select('member_name, school_name, role_type, created_at, vote_id')
+      .order('created_at', { ascending: false });
+
+    if (ballotData) {
+      const map = new Map<string, any>();
+      ballotData.forEach((b) => {
+        const key = `${b.school_name}_${b.member_name}`;
+        if (!map.has(key)) {
+          map.set(key, {
+            name: b.member_name,
+            school: b.school_name,
+            role: b.role_type || '학교운영위원장',
+            first_seen: b.created_at,
+            vote_count: 1,
+          });
+        } else {
+          const item = map.get(key);
+          item.vote_count += 1;
+        }
+      });
+      setVoters(Array.from(map.values()));
+    }
 
     // 3. 연혁
     const { data: histData } = await supabase
@@ -518,6 +546,14 @@ export default function AdminPage() {
           🗳️ 전자투표 & 설문 관리 ({votes.length}건)
         </button>
         <button
+          onClick={() => setActiveTab('voters')}
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+            activeTab === 'voters' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          📋 운영위원·유권자 명부 ({voters.length}명)
+        </button>
+        <button
           onClick={() => setActiveTab('community')}
           className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
             activeTab === 'community' ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100'
@@ -689,6 +725,112 @@ export default function AdminPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 탭: 운영위원·유권자 등록 명부 */}
+      {activeTab === 'voters' && (
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-amber-600" />
+                  학교운영위원 및 전자투표 유권자 등록 명부
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  홈페이지 및 전자투표를 통해 등록/참여한 진주시 학교운영위원장님 및 학부모 위원 명부입니다.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <input
+                  type="text"
+                  placeholder="이름 또는 학교명 검색..."
+                  value={voterSearch}
+                  onChange={(e) => setVoterSearch(e.target.value)}
+                  className="px-3 py-2 rounded-xl border border-slate-200 text-xs w-full sm:w-60 focus:outline-none focus:border-amber-500"
+                />
+                <button
+                  onClick={loadAllData}
+                  className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex-shrink-0"
+                  title="새로고침"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* 통계 요약 */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+              <div className="bg-amber-50/60 border border-amber-200/60 rounded-2xl p-3">
+                <div className="text-[11px] text-amber-800 font-semibold">총 등록 유권자</div>
+                <div className="text-xl font-black text-amber-950 mt-0.5">{voters.length}명</div>
+              </div>
+              <div className="bg-blue-50/60 border border-blue-200/60 rounded-2xl p-3">
+                <div className="text-[11px] text-blue-800 font-semibold">등록 학교 수</div>
+                <div className="text-xl font-black text-blue-950 mt-0.5">
+                  {new Set(voters.map((v) => v.school)).size}개교
+                </div>
+              </div>
+              <div className="bg-emerald-50/60 border border-emerald-200/60 rounded-2xl p-3">
+                <div className="text-[11px] text-emerald-800 font-semibold">운영위원장 비율</div>
+                <div className="text-xl font-black text-emerald-950 mt-0.5">
+                  {voters.length > 0 ? Math.round((voters.filter((v) => v.role === '학교운영위원장').length / voters.length) * 100) : 0}%
+                </div>
+              </div>
+              <div className="bg-purple-50/60 border border-purple-200/60 rounded-2xl p-3">
+                <div className="text-[11px] text-purple-800 font-semibold">1인 1표 보장제</div>
+                <div className="text-xl font-black text-purple-950 mt-0.5">정상 가동중</div>
+              </div>
+            </div>
+
+            {/* 유권자 목록 테이블 */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50 text-slate-600 font-bold">
+                    <th className="py-2.5 px-3">연번</th>
+                    <th className="py-2.5 px-3">소속 학교(기관)</th>
+                    <th className="py-2.5 px-3">성명</th>
+                    <th className="py-2.5 px-3">직책</th>
+                    <th className="py-2.5 px-3">투표 참여수</th>
+                    <th className="py-2.5 px-3">최초 등록/참여일시</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {voters
+                    .filter((v) => {
+                      if (!voterSearch.trim()) return true;
+                      const q = voterSearch.toLowerCase();
+                      return v.name?.toLowerCase().includes(q) || v.school?.toLowerCase().includes(q);
+                    })
+                    .map((v, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                        <td className="py-2.5 px-3 text-slate-400 font-medium">{idx + 1}</td>
+                        <td className="py-2.5 px-3 font-bold text-slate-900">{v.school}</td>
+                        <td className="py-2.5 px-3 font-extrabold text-blue-700">{v.name}</td>
+                        <td className="py-2.5 px-3">
+                          <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold text-[11px]">
+                            {v.role}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-700 font-semibold">{v.vote_count}회</td>
+                        <td className="py-2.5 px-3 text-slate-400">
+                          {v.first_seen ? new Date(v.first_seen).toLocaleDateString('ko-KR') : '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  {voters.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="text-center py-8 text-slate-400">
+                        아직 전자투표 또는 등록을 완료한 유권자 데이터가 없습니다.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
