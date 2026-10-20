@@ -15,7 +15,10 @@ import {
   User, 
   Send, 
   X,
-  AlertCircle
+  AlertCircle,
+  ShieldCheck,
+  UserCheck,
+  KeyRound
 } from 'lucide-react';
 
 export default function VotePage() {
@@ -23,6 +26,16 @@ export default function VotePage() {
   const [votes, setVotes] = useState<OfficialVote[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('전체');
   const [loading, setLoading] = useState(true);
+
+  // 유권자(운영위원) 사전등록(가입) 모달 상태
+  const [registerModalOpen, setRegisterModalOpen] = useState(false);
+  const [regName, setRegName] = useState('');
+  const [regSchool, setRegSchool] = useState('');
+  const [regRole, setRegRole] = useState<'학교운영위원장' | '협의회 임원' | '학교운영위원' | '학부모'>('학교운영위원장');
+  const [regPassword, setRegPassword] = useState('');
+  const [regSubmitting, setRegSubmitting] = useState(false);
+  const [regMsg, setRegMsg] = useState('');
+  const [regError, setRegError] = useState('');
 
   // 투표 참여 모달 상태
   const [voteModalOpen, setVoteModalOpen] = useState(false);
@@ -68,6 +81,65 @@ export default function VotePage() {
     fetchVotes();
   }, []);
 
+  // 유권자(운영위원) 사전등록(가입) 핸들러
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRegError('');
+    setRegMsg('');
+
+    if (!regName.trim() || !regSchool.trim()) {
+      setRegError('성명과 소속 학교명을 모두 입력해 주세요.');
+      return;
+    }
+    if (!regPassword || regPassword.length < 4) {
+      setRegError('본인 확인용 비밀번호(4자 이상)를 입력해 주세요.');
+      return;
+    }
+
+    setRegSubmitting(true);
+    try {
+      const { data: existing } = await supabase
+        .from('members')
+        .select('id')
+        .eq('name', regName.trim())
+        .eq('school_name', regSchool.trim())
+        .maybeSingle();
+
+      if (existing) {
+        setRegError('이미 동일한 학교와 성명으로 등록된 위원 정보가 존재합니다.');
+        setRegSubmitting(false);
+        return;
+      }
+
+      const { error } = await supabase.from('members').insert([
+        {
+          name: regName.trim(),
+          school_name: regSchool.trim(),
+          password_hash: regPassword,
+          status: 'approved',
+          is_active: true,
+        },
+      ]);
+
+      if (error) {
+        setRegError('등록 처리 중 오류: ' + error.message);
+      } else {
+        setRegMsg('운영위원 / 유권자 등록(가입)이 완료되었습니다! 이제 각 안건 투표에 1인 1표로 참여하실 수 있습니다.');
+        setTimeout(() => {
+          setRegisterModalOpen(false);
+          setRegMsg('');
+          setRegName('');
+          setRegSchool('');
+          setRegPassword('');
+        }, 1800);
+      }
+    } catch (err: any) {
+      setRegError('등록 오류: ' + err.message);
+    } finally {
+      setRegSubmitting(false);
+    }
+  };
+
   // 투표 제출 핸들러
   const handleVoteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,6 +155,21 @@ export default function VotePage() {
     }
 
     setSubmitting(true);
+
+    // 중복 투표 방지 검사 (1인 1표 보장)
+    const { data: existingBallot } = await supabase
+      .from('official_vote_ballots')
+      .select('id')
+      .eq('vote_id', activeVote.id)
+      .eq('member_name', voterName.trim())
+      .eq('school_name', schoolName.trim())
+      .maybeSingle();
+
+    if (existingBallot) {
+      setErrorMsg(`[중복 투표 불가] ${schoolName.trim()} ${voterName.trim()} 위원님은 본 안건에 이미 투표를 완료하셨습니다.`);
+      setSubmitting(false);
+      return;
+    }
 
     try {
       // 1. 투표수 1 증가 (옵션 테이블)
@@ -139,6 +226,32 @@ export default function VotePage() {
         <p className="text-slate-600 text-sm sm:text-base max-w-2xl mx-auto">
           학교운영위원회 협의회 임원 안건 의결부터 각 학교 운영위원장 및 학부모 현안 여론조사까지, 투명하게 참여하고 결과를 확인합니다.
         </p>
+      </div>
+
+      {/* 유권자 사전등록(가입) 안내 배너 */}
+      <div className="bg-gradient-to-r from-indigo-900 to-blue-900 text-white rounded-3xl p-6 sm:p-7 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-5">
+        <div className="space-y-1 text-center sm:text-left">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-indigo-200 text-xs font-bold backdrop-blur-sm">
+            <ShieldCheck className="w-3.5 h-3.5 text-indigo-300" /> 공정 전자투표 1인 1표 보장제
+          </div>
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight">
+            운영위원 / 유권자 사전등록 (가입 신청)
+          </h2>
+          <p className="text-xs sm:text-sm text-indigo-200 break-keep max-w-xl">
+            진주시 관내 유치원, 초·중·고·특수학교 학교운영위원장님 및 교육공동체의 정당한 투표권 행사를 위해 사전 등록 절차를 운영합니다.
+          </p>
+        </div>
+
+        <button
+          onClick={() => {
+            setRegError('');
+            setRegMsg('');
+            setRegisterModalOpen(true);
+          }}
+          className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-white hover:bg-indigo-50 text-indigo-950 font-black text-sm shadow-md transition-all flex items-center justify-center gap-2 hover:scale-105 flex-shrink-0"
+        >
+          <UserCheck className="w-4 h-4 text-indigo-600" /> 유권자 사전등록(가입)
+        </button>
       </div>
 
       {/* 말머리 필터 탭 */}
@@ -408,6 +521,118 @@ export default function VotePage() {
                   className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition-all disabled:opacity-50"
                 >
                   {submitting ? '제출 중...' : '투표 제출하기'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* 유권자 사전등록(가입) 모달 */}
+      {registerModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-5">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-indigo-600" /> 유권자 사전등록 (가입)
+              </h3>
+              <button
+                onClick={() => setRegisterModalOpen(false)}
+                className="p-1 rounded-xl hover:bg-slate-100 text-slate-400"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {regError && (
+              <div className="p-3 rounded-xl bg-red-50 text-red-700 text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" /> {regError}
+              </div>
+            )}
+
+            {regMsg && (
+              <div className="p-3 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> {regMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleRegisterSubmit} className="space-y-4">
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    소속 학교 / 유치원명 *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="예: 으뜸유치원 또는 진주초등학교"
+                    value={regSchool}
+                    onChange={(e) => setRegSchool(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    성명 *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="예: 홍길동"
+                    value={regName}
+                    onChange={(e) => setRegName(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    참여 직책 구분 *
+                  </label>
+                  <select
+                    value={regRole}
+                    onChange={(e) => setRegRole(e.target.value as any)}
+                    className="w-full p-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  >
+                    <option value="학교운영위원장">학교(유치원)운영위원장</option>
+                    <option value="협의회 임원">협의회 임원 (회장단, 감사, 사무국)</option>
+                    <option value="학교운영위원">학교운영위원 (학부모위원, 교원위원 등)</option>
+                    <option value="학부모">일반 학부모</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    본인 확인용 비밀번호 (4자 이상) *
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="투표 및 본인 확인 시 사용할 비밀번호"
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    required
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    * 추후 본인 투표 확인 및 의견 검증 시 사용됩니다.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRegisterModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={regSubmitting}
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md transition-all disabled:opacity-50"
+                >
+                  {regSubmitting ? '등록 처리 중...' : '사전등록(가입) 완료'}
                 </button>
               </div>
             </form>

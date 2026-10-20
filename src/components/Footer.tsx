@@ -31,7 +31,7 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm">
               <li>
                 <Link href="/about" className="hover:text-white transition-colors flex items-center gap-1.5 break-keep">
-                  <BookOpen className="w-4 h-4 text-slate-500" /> 협의회 회칙 및 연혁
+                  <BookOpen className="w-4 h-4 text-slate-500" /> 협의회 소개 및 연혁
                 </Link>
               </li>
               <li>
@@ -92,8 +92,6 @@ export default function Footer() {
             © {new Date().getFullYear()} 학교운영위원회 진주지역협의회. All rights reserved.
           </div>
           <div className="flex items-center gap-4 break-keep">
-            <Link href="/about" className="hover:text-slate-400">회칙 열람</Link>
-            <span>•</span>
             <Link href="/community" className="hover:text-slate-400">게시판 이용수칙</Link>
             <span>•</span>
             <Link href="/admin" className="hover:text-slate-400">임원 관리자 로그인</Link>
