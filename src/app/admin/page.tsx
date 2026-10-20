@@ -20,7 +20,11 @@ import {
   BarChart2,
   FolderDown,
   Camera,
-  Upload
+  Upload,
+  Share2,
+  ExternalLink,
+  Image as ImageIcon,
+  RefreshCw
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -41,6 +45,7 @@ export default function AdminPage() {
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [greeting, setGreeting] = useState('');
+  const [ogImage, setOgImage] = useState('/og-image.png');
 
   // 새 갤러리 입력 폼
   const [newGallery, setNewGallery] = useState({
@@ -158,13 +163,20 @@ export default function AdminPage() {
       .order('event_date', { ascending: false });
     if (galData) setGallery(galData);
 
-    // 8. 사이트 설정
+    // 8. 사이트 설정 (인사말 & 공유 썸네일)
     const { data: setData } = await supabase
       .from('site_settings')
       .select('*')
       .eq('key', 'greeting')
-      .single();
+      .maybeSingle();
     if (setData) setGreeting(setData.value);
+
+    const { data: ogData } = await supabase
+      .from('site_settings')
+      .select('*')
+      .eq('key', 'og_image')
+      .maybeSingle();
+    if (ogData?.value) setOgImage(ogData.value);
   };
 
   // 갤러리 사진 등록 핸들러
@@ -397,6 +409,31 @@ export default function AdminPage() {
     }
   };
 
+  // 카카오톡/SNS 공유 썸네일(OG 이미지) 저장
+  const handleSaveOgImage = async (customUrl?: string) => {
+    const targetUrl = customUrl !== undefined ? customUrl : ogImage.trim();
+    if (!targetUrl) {
+      alert('썸네일 이미지 주소를 입력해 주세요.');
+      return;
+    }
+    const { error } = await supabase
+      .from('site_settings')
+      .upsert({ key: 'og_image', value: targetUrl, updated_at: new Date().toISOString() });
+    if (!error) {
+      setOgImage(targetUrl);
+      alert('카카오톡 / SNS 공유 썸네일 설정이 저장되었습니다!\n\n※ 이미 카톡에 공유된 적이 있는 경우 아래 [카카오 공유 디버거]에서 캐시를 초기화하시면 즉시 새 이미지로 변경됩니다.');
+    } else {
+      alert('저장 중 오류: ' + error.message);
+    }
+  };
+
+  // 기본 공식 썸네일로 초기화
+  const handleResetOgImage = async () => {
+    if (confirm('공식 기본 협의회 썸네일(/og-image.png)로 초기화하시겠습니까?')) {
+      await handleSaveOgImage('/og-image.png');
+    }
+  };
+
   // 로그인 화면
   if (!isAuthenticated) {
     return (
@@ -526,7 +563,7 @@ export default function AdminPage() {
             activeTab === 'settings' ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100'
           }`}
         >
-          ⚙️ 회장 인사말
+          ⚙️ 사이트 설정 (인사말 / 공유 썸네일)
         </button>
       </div>
 
@@ -1138,28 +1175,127 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* 탭: 사이트 설정 */}
+      {/* 탭: 사이트 설정 (인사말 & 공유 썸네일) */}
       {activeTab === 'settings' && (
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
-          <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-            <Edit3 className="w-5 h-5 text-blue-600" /> 회장 인사말 편집
-          </h3>
-          <p className="text-xs text-slate-500">
-            새로운 회장님이 취임하셨을 때 인사말 문구를 수정하시면 홈페이지 소개 화면에 즉시 반영됩니다.
-          </p>
-          <textarea
-            value={greeting}
-            onChange={(e) => setGreeting(e.target.value)}
-            rows={8}
-            className="w-full p-4 rounded-2xl border border-slate-200 bg-slate-50 text-sm leading-relaxed"
-          ></textarea>
-          <div className="flex justify-end">
-            <button
-              onClick={handleSaveGreeting}
-              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md flex items-center gap-2 transition-all"
-            >
-              <Save className="w-4 h-4" /> 인사말 저장하기
-            </button>
+        <div className="space-y-8">
+          {/* 섹션 1: 카카오톡 / SNS 공유 썸네일(OG 이미지) 관리 */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+              <div>
+                <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+                  <Share2 className="w-5 h-5 text-blue-600" /> 카카오톡 / SNS 링크 공유 썸네일 (OG 이미지) 관리
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  카카오톡, 문자, 밴드, 페이스북 등에 홈페이지 링크를 전송했을 때 노출되는 대표 카드 이미지를 설정합니다.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleResetOgImage}
+                className="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold flex items-center gap-1.5 transition-colors whitespace-nowrap self-start sm:self-auto"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-slate-500" /> 공식 기본 이미지로 초기화
+              </button>
+            </div>
+
+            {/* 현재 적용 썸네일 미리보기 (카카오톡 말풍선 스타일 카드) */}
+            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-3">
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                <ImageIcon className="w-4 h-4 text-slate-400" /> 카카오톡 전송 시 실제 표시되는 미리보기
+              </span>
+              <div className="max-w-md bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="w-full aspect-[1.91/1] bg-slate-900 relative overflow-hidden flex items-center justify-center">
+                  <img
+                    src={ogImage || '/og-image.png'}
+                    alt="공유 썸네일 미리보기"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = '/og-image.png';
+                    }}
+                  />
+                </div>
+                <div className="p-4 space-y-1">
+                  <div className="text-xs font-semibold text-slate-400">jinju-scca.vercel.app</div>
+                  <div className="font-black text-slate-900 text-sm line-clamp-1">
+                    학교운영위원회 진주지역협의회
+                  </div>
+                  <div className="text-xs text-slate-500 line-clamp-2">
+                    진주시 관내 유치원·초·중·고·특수학교 학교운영위원장 협조 및 학부모 소통 기구
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 이미지 URL 입력 및 저장 */}
+            <div className="space-y-3">
+              <label className="block text-xs font-bold text-slate-700">
+                썸네일 이미지 주소 (URL 또는 상대경로)
+              </label>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  value={ogImage}
+                  onChange={(e) => setOgImage(e.target.value)}
+                  placeholder="예: /og-image.png 또는 직접 업로드하신 이미지 웹 주소(https://...)"
+                  className="flex-1 p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleSaveOgImage()}
+                  className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md flex items-center justify-center gap-2 transition-all"
+                >
+                  <Save className="w-4 h-4" /> 썸네일 저장
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                * 기본값인 <code className="text-blue-600 font-bold">/og-image.png</code>를 사용하시면 협의회 공식 엠블럼 심볼과 슬로건이 포함된 고해상도(1200×630) 공식 카드가 적용됩니다.
+              </p>
+            </div>
+
+            {/* 카카오 캐시 초기화 바로가기 배너 */}
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 space-y-2">
+              <div className="font-bold flex items-center gap-1.5 text-amber-950">
+                💡 카카오톡에 이미 한 번 공유된 링크의 사진이 바뀌지 않을 때 (캐시 초기화 안내)
+              </div>
+              <p className="leading-relaxed">
+                카카오톡은 서버 부하를 줄이기 위해 한 번 공유된 링크의 썸네일을 며칠간 저장해 둡니다. 이미 회장님 사진으로 전송된 적이 있다면, 카카오 공식 디버거에서 홈페이지 주소를 넣고 <strong>[캐시 초기화]</strong> 버튼을 누르시면 즉시 새 썸네일로 갱신됩니다.
+              </p>
+              <div className="pt-1">
+                <a
+                  href="https://developers.kakao.com/tool/debugger/sharing"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> 카카오 공유 디버거 (캐시 초기화 바로가기) ↗
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* 섹션 2: 회장 인사말 편집 */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+            <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2 pb-4 border-b border-slate-100">
+              <Edit3 className="w-5 h-5 text-blue-600" /> 회장 인사말 편집
+            </h3>
+            <p className="text-xs text-slate-500">
+              인사말 문구를 수정하시면 홈페이지 소개(/about) 화면에 줄바꿈과 함께 즉시 반영됩니다.
+            </p>
+            <textarea
+              value={greeting}
+              onChange={(e) => setGreeting(e.target.value)}
+              rows={10}
+              className="w-full p-4 rounded-2xl border border-slate-200 bg-slate-50 text-sm leading-relaxed"
+            ></textarea>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleSaveGreeting}
+                className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md flex items-center gap-2 transition-all"
+              >
+                <Save className="w-4 h-4" /> 인사말 저장하기
+              </button>
+            </div>
           </div>
         </div>
       )}

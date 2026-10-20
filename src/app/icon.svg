@@ -1,0 +1,38 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logo-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E3A8A" />
+      <stop offset="50%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#3B82F6" />
+    </linearGradient>
+    <radialGradient id="logo-pearl" cx="38%" cy="32%" r="68%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="45%" stop-color="#F8FAFC" />
+      <stop offset="75%" stop-color="#E0E7FF" />
+      <stop offset="100%" stop-color="#C7D2FE" />
+    </radialGradient>
+    <linearGradient id="logo-wing-l" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#34D399" />
+    </linearGradient>
+    <linearGradient id="logo-wing-r" x1="100%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#0D9488" />
+      <stop offset="100%" stop-color="#2DD4BF" />
+    </linearGradient>
+    <linearGradient id="logo-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCD34D" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#logo-bg)" />
+  <circle cx="32" cy="32" r="27" stroke="#93C5FD" stroke-width="1" stroke-dasharray="3 3" opacity="0.35" />
+  <path d="M17 48C21.5 45.5 27 45.5 32 47.8C37 45.5 42.5 45.5 47 48" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" />
+  <path d="M19 44C23 42 27.5 42 32 44.2C36.5 42 41 42 45 44" stroke="#BFDBFE" stroke-width="1.8" stroke-linecap="round" opacity="0.8" />
+  <line x1="32" y1="44.5" x2="32" y2="48" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" />
+  <path d="M18 38C16 31 19 22 24 19C24 23 23 30 29 35C24.5 36.5 20.5 37.5 18 38Z" fill="url(#logo-wing-l)" opacity="0.95" />
+  <path d="M46 38C48 31 45 22 40 19C40 23 41 30 35 35C39.5 36.5 43.5 37.5 46 38Z" fill="url(#logo-wing-r)" opacity="0.95" />
+  <circle cx="32" cy="27" r="9.5" fill="url(#logo-pearl)" />
+  <ellipse cx="29" cy="23.5" rx="3.2" ry="2" fill="#FFFFFF" opacity="0.95" transform="rotate(-25 29 23.5)" />
+  <circle cx="34.5" cy="29.5" r="1.2" fill="#FFFFFF" opacity="0.6" />
+  <path d="M32 12.5L33.2 15L35.5 15.3L33.7 16.9L34.2 19.3L32 18L29.8 19.3L30.3 16.9L28.5 15.3L30.8 15L32 12.5Z" fill="url(#logo-gold)" />
+</svg>

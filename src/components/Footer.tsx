@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Shield, BookOpen, Users, MessageSquare } from 'lucide-react';
+import CouncilLogo from '@/components/CouncilLogo';
 
 export default function Footer() {
   return (
@@ -9,9 +10,7 @@ export default function Footer() {
           {/* 컬럼 1: 단체 정보 */}
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
-                진
-              </div>
+              <CouncilLogo size={36} variant="mark" />
               <span className="text-white text-lg font-bold tracking-tight">
                 학교운영위원회 진주지역협의회
               </span>

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, Shield, Lock, Vote } from 'lucide-react';
+import CouncilLogo from '@/components/CouncilLogo';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -46,9 +47,7 @@ export default function Navbar() {
             title="학교운영위원회 진주지역협의회 홈으로 이동"
             className="flex items-center gap-3 flex-shrink-0 group py-1.5 px-2.5 -ml-2.5 rounded-2xl hover:bg-slate-50 transition-all"
           >
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-md group-hover:scale-105 transition-transform flex-shrink-0">
-              진
-            </div>
+            <CouncilLogo size={44} variant="mark" className="group-hover:scale-105 transition-transform flex-shrink-0" />
             <div className="whitespace-nowrap">
               <div className="text-lg sm:text-xl font-black text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors whitespace-nowrap">
                 학교운영위원회 진주지역협의회
