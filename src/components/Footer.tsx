@@ -55,7 +55,7 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm">
               <li>
                 <a
-                  href="https://jjfe.gne.go.kr"
+                  href="https://jjedu.gne.go.kr/jjedu/main.do"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-white transition-colors block break-keep"
