@@ -37,7 +37,7 @@ export default function CommunityPage() {
     // 1. 게시글 조회
     const { data: postData, error: postErr } = await supabase
       .from('anonymous_posts')
-      .select('*')
+      .select('id, author_name, school_name, title, content, view_count, is_deleted, created_at')
       .eq('is_deleted', false)
       .order('created_at', { ascending: false });
 

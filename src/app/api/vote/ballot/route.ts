@@ -23,8 +23,44 @@ export async function POST(req: NextRequest) {
     const trimmedSchool = schoolName.trim();
     const supabase = createClient();
 
-    // 1. 서버 측 중복 투표 엄격 검증 (1인 1표 보장)
-    const { data: existingBallot, error: checkErr } = await supabase
+    // 1. 투표 안건 존재 여부 및 마감 여부 검증
+    const { data: vote, error: voteErr } = await supabase
+      .from('official_votes')
+      .select('id, status')
+      .eq('id', voteId)
+      .maybeSingle();
+
+    if (voteErr || !vote) {
+      return NextResponse.json(
+        { error: '존재하지 않는 투표 안건입니다.' },
+        { status: 404 }
+      );
+    }
+
+    if (vote.status !== 'active') {
+      return NextResponse.json(
+        { error: '이미 마감된 투표 안건입니다.' },
+        { status: 400 }
+      );
+    }
+
+    // 2. 선택지가 해당 투표 안건의 것인지 정합성 검증
+    const { data: opt, error: optErr } = await supabase
+      .from('official_vote_options')
+      .select('id, vote_count')
+      .eq('id', optionId)
+      .eq('vote_id', voteId)
+      .maybeSingle();
+
+    if (optErr || !opt) {
+      return NextResponse.json(
+        { error: '해당 투표 안건에 속하지 않는 유효하지 않은 선택지입니다.' },
+        { status: 400 }
+      );
+    }
+
+    // 3. 서버 측 중복 투표 엄격 검증 (1인 1표 보장)
+    const { data: existingBallot } = await supabase
       .from('official_vote_ballots')
       .select('id')
       .eq('vote_id', voteId)
@@ -39,7 +75,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. 투표 용지 안전 등록
+    // 4. 투표 용지 안전 등록
     const { error: insertErr } = await supabase.from('official_vote_ballots').insert([
       {
         vote_id: voteId,
@@ -58,19 +94,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. 옵션 득표수 1 증가 (서버 처리)
-    const { data: opt } = await supabase
+    // 5. 옵션 득표수 1 증가 (서버 처리)
+    await supabase
       .from('official_vote_options')
-      .select('vote_count')
-      .eq('id', optionId)
-      .single();
-
-    if (opt) {
-      await supabase
-        .from('official_vote_options')
-        .update({ vote_count: (opt.vote_count || 0) + 1 })
-        .eq('id', optionId);
-    }
+      .update({ vote_count: (opt.vote_count || 0) + 1 })
+      .eq('id', optionId);
 
     return NextResponse.json({
       success: true,
@@ -78,7 +106,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     return NextResponse.json(
-      { error: '서버 오류: ' + err.message },
+      { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
     );
   }

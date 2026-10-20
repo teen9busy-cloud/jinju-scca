@@ -1,17 +1,19 @@
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
 
-const ADMIN_SECRET = process.env.ADMIN_PASSWORD || 'Wlswntl1234!';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+// 세션 서명 키 분리 (별도 지정 없으면 환경변수 기반 보안 솔트 사용)
+const SESSION_SECRET = process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD || 'jinju-scca-session-secret-key-32bytes-secure-salt-2026';
 const COOKIE_NAME = 'jinju_admin_session';
 
 /**
- * 관리자 비밀번호 타이밍 안전(timing-safe) 검증
+ * 관리자 비밀번호 타이밍 안전(timing-safe) 검증 (Fail-closed)
  */
 export function verifyAdminPassword(input: string): boolean {
-  if (!input) return false;
+  if (!input || !ADMIN_PASSWORD) return false;
   try {
     const inputBuf = Buffer.from(input, 'utf8');
-    const secretBuf = Buffer.from(ADMIN_SECRET, 'utf8');
+    const secretBuf = Buffer.from(ADMIN_PASSWORD, 'utf8');
     if (inputBuf.length !== secretBuf.length) return false;
     return crypto.timingSafeEqual(inputBuf, secretBuf);
   } catch (e) {
@@ -20,12 +22,12 @@ export function verifyAdminPassword(input: string): boolean {
 }
 
 /**
- * HMAC-SHA256 기반 관리자 세션 토큰 생성
+ * HMAC-SHA256 기반 관리자 세션 토큰 생성 (독립 세션 시크릿 사용)
  */
 export function createAdminSessionToken(): string {
   const timestamp = Date.now().toString();
   const signature = crypto
-    .createHmac('sha256', ADMIN_SECRET)
+    .createHmac('sha256', SESSION_SECRET)
     .update(timestamp)
     .digest('hex');
   return `${timestamp}.${signature}`;
@@ -46,7 +48,7 @@ export function verifyAdminSessionToken(token: string): boolean {
     }
 
     const expectedSignature = crypto
-      .createHmac('sha256', ADMIN_SECRET)
+      .createHmac('sha256', SESSION_SECRET)
       .update(timestampStr)
       .digest('hex');
 
@@ -98,16 +100,17 @@ export async function clearAdminSessionCookie(): Promise<void> {
 }
 
 /**
- * 단방향 PBKDF2 비밀번호 해싱
+ * OWASP 권장 단방향 PBKDF2 비밀번호 해싱 (100,000회 반복)
  */
 export function hashPassword(password: string): string {
   const salt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.pbkdf2Sync(password, salt, 1000, 32, 'sha256').toString('hex');
-  return `pbkdf2$${salt}$${hash}`;
+  const iterations = 100000;
+  const hash = crypto.pbkdf2Sync(password, salt, iterations, 32, 'sha256').toString('hex');
+  return `pbkdf2$${iterations}$${salt}$${hash}`;
 }
 
 /**
- * 비밀번호 검증 (새 pbkdf2 해시 및 레거시 평문 호환)
+ * 비밀번호 검증 (새 10만회 PBKDF2, 기존 1천회 PBKDF2 및 레거시 평문 하위 호환)
  */
 export function verifyPassword(password: string, storedHash: string): boolean {
   if (!password || !storedHash) return false;
@@ -119,11 +122,24 @@ export function verifyPassword(password: string, storedHash: string): boolean {
 
   try {
     const parts = storedHash.split('$');
-    if (parts.length !== 3) return false;
-    const salt = parts[1];
-    const hash = parts[2];
-    const testHash = crypto.pbkdf2Sync(password, salt, 1000, 32, 'sha256').toString('hex');
+    let iterations = 1000;
+    let salt = '';
+    let hash = '';
 
+    if (parts.length === 3) {
+      // 구버전 pbkdf2$salt$hash (1000회)
+      salt = parts[1];
+      hash = parts[2];
+    } else if (parts.length === 4) {
+      // 신버전 pbkdf2$iterations$salt$hash (100,000회)
+      iterations = parseInt(parts[1], 10);
+      salt = parts[2];
+      hash = parts[3];
+    } else {
+      return false;
+    }
+
+    const testHash = crypto.pbkdf2Sync(password, salt, iterations, 32, 'sha256').toString('hex');
     const hashBuf = Buffer.from(hash, 'hex');
     const testBuf = Buffer.from(testHash, 'hex');
     if (hashBuf.length !== testBuf.length) return false;

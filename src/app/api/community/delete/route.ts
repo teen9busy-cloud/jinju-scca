@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = createClient();
-    const isAdmin = (await isAuthenticatedAdmin()) || verifyAdminPassword(password);
+    const isAdmin = await isAuthenticatedAdmin();
 
     // 1. 게시글 삭제 처리
     if (type === 'post') {
