@@ -113,37 +113,28 @@ function RegisterContent() {
     setSubmitting(true);
 
     try {
-      // 1. 유권자/위원 명부에 등록 (official_vote_ballots 테이블의 명부 시스템과 안전 연동)
-      const userProfile = {
-        name: name.trim(),
-        school: effectiveSchool,
-        role: role,
-        phone: phone.trim() || null,
-        registered_at: new Date().toISOString(),
-      };
+      const res = await fetch('/api/member/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          school: effectiveSchool,
+          password: password,
+          role: role,
+          phone: phone.trim() || null,
+        }),
+      });
 
-      // members 테이블 insert 시도
-      try {
-        await supabase.from('members').insert([
-          {
-            name: name.trim(),
-            school_name: effectiveSchool,
-            password_hash: password,
-            status: 'approved',
-            is_active: true,
-          },
-        ]);
-      } catch (dbErr) {
-        // RLS 등 예외 발생 시에도 클라우드 투표 명부 브릿지로 계속 진행
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMsg(data.error || '등록 중 오류가 발생했습니다.');
+        return;
       }
 
-      // 2. 브라우저 로컬 스토리지에 유권자 인증 저장 (자동 로그인)
+      const userProfile = data.user;
       localStorage.setItem('jinju_scca_voter', JSON.stringify(userProfile));
       setCurrentUser(userProfile);
-
-      // 3. 네비게이션 바 등 전역에 상태 동기화 이벤트 발행
       window.dispatchEvent(new Event('voter-session-updated'));
-
       setSuccess(true);
     } catch (err: any) {
       setErrorMsg('등록 중 오류가 발생했습니다: ' + (err.message || '다시 시도해 주세요.'));

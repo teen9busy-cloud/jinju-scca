@@ -93,7 +93,7 @@ export default function VotePage() {
     } catch (e) {}
   }, []);
 
-  // 유권자(운영위원) 사전등록(가입) 핸들러
+  // 유권자(운영위원) 사전등록(가입) 핸들러 (서버 사이드 암호화 연동)
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegError('');
@@ -110,41 +110,31 @@ export default function VotePage() {
 
     setRegSubmitting(true);
     try {
-      const { data: existing } = await supabase
-        .from('members')
-        .select('id')
-        .eq('name', regName.trim())
-        .eq('school_name', regSchool.trim())
-        .maybeSingle();
+      const res = await fetch('/api/member/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: regName.trim(),
+          school: regSchool.trim(),
+          password: regPassword,
+          role: '학교운영위원장',
+        }),
+      });
 
-      if (existing) {
-        setRegError('이미 동일한 학교와 성명으로 등록된 위원 정보가 존재합니다.');
-        setRegSubmitting(false);
+      const data = await res.json();
+      if (!res.ok) {
+        setRegError(data.error || '등록 중 오류가 발생했습니다.');
         return;
       }
 
-      const { error } = await supabase.from('members').insert([
-        {
-          name: regName.trim(),
-          school_name: regSchool.trim(),
-          password_hash: regPassword,
-          status: 'approved',
-          is_active: true,
-        },
-      ]);
-
-      if (error) {
-        setRegError('등록 처리 중 오류: ' + error.message);
-      } else {
-        setRegMsg('운영위원 / 유권자 등록(가입)이 완료되었습니다! 이제 각 안건 투표에 1인 1표로 참여하실 수 있습니다.');
-        setTimeout(() => {
-          setRegisterModalOpen(false);
-          setRegMsg('');
-          setRegName('');
-          setRegSchool('');
-          setRegPassword('');
-        }, 1800);
-      }
+      setRegMsg('운영위원 / 유권자 등록(가입)이 완료되었습니다! 이제 각 안건 투표에 1인 1표로 참여하실 수 있습니다.');
+      setTimeout(() => {
+        setRegisterModalOpen(false);
+        setRegMsg('');
+        setRegName('');
+        setRegSchool('');
+        setRegPassword('');
+      }, 1800);
     } catch (err: any) {
       setRegError('등록 오류: ' + err.message);
     } finally {
@@ -152,7 +142,7 @@ export default function VotePage() {
     }
   };
 
-  // 투표 제출 핸들러
+  // 투표 제출 핸들러 (서버 사이드 중복 방지 및 원자적 카운트 연동)
   const handleVoteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -168,42 +158,26 @@ export default function VotePage() {
 
     setSubmitting(true);
 
-    // 중복 투표 방지 검사 (1인 1표 보장)
-    const { data: existingBallot } = await supabase
-      .from('official_vote_ballots')
-      .select('id')
-      .eq('vote_id', activeVote.id)
-      .eq('member_name', voterName.trim())
-      .eq('school_name', schoolName.trim())
-      .maybeSingle();
-
-    if (existingBallot) {
-      setErrorMsg(`[중복 투표 불가] ${schoolName.trim()} ${voterName.trim()} 위원님은 본 안건에 이미 투표를 완료하셨습니다.`);
-      setSubmitting(false);
-      return;
-    }
-
     try {
-      // 1. 투표수 1 증가 (옵션 테이블)
-      const currentOpt = activeVote.options?.find((o) => o.id === selectedOptionId);
-      if (currentOpt) {
-        await supabase
-          .from('official_vote_options')
-          .update({ vote_count: (currentOpt.vote_count || 0) + 1 })
-          .eq('id', selectedOptionId);
-      }
-
-      // 2. 투표 용지 등록
-      await supabase.from('official_vote_ballots').insert([
-        {
-          vote_id: activeVote.id,
-          option_id: selectedOptionId,
-          member_name: voterName.trim(),
-          school_name: schoolName.trim(),
-          role_type: roleType,
+      const res = await fetch('/api/vote/ballot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          voteId: activeVote.id,
+          optionId: selectedOptionId,
+          memberName: voterName.trim(),
+          schoolName: schoolName.trim(),
+          roleType: roleType,
           comment: comment.trim() || null,
-        },
-      ]);
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrorMsg(data.error || '투표 제출에 실패했습니다.');
+        return;
+      }
 
       setSuccessMsg('소중한 투표와 의견이 정상적으로 반영되었습니다!');
       setTimeout(() => {

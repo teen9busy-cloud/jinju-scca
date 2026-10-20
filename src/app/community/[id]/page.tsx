@@ -26,7 +26,6 @@ interface CommentItem {
   postId: number;
   authorName: string;
   content: string;
-  passwordHash: string;
   createdAt: string;
 }
 
@@ -73,7 +72,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
     setLoading(true);
     const { data, error } = await supabase
       .from('anonymous_posts')
-      .select('*')
+      .select('id, title, content, author_name, school_name, view_count, is_deleted, created_at')
       .eq('id', postId)
       .eq('is_deleted', false)
       .maybeSingle();
@@ -123,24 +122,16 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
     setLoading(false);
   };
 
-  // 댓글 로드 함수
+  // 댓글 로드 함수 (서버 API를 통해 비밀번호 해시는 클라이언트로 전송되지 않음)
   const loadComments = async () => {
-    const { data: commentSettings } = await supabase
-      .from('site_settings')
-      .select('*')
-      .like('key', `comment:${postId}:%`);
-
-    if (commentSettings) {
-      const parsed: CommentItem[] = [];
-      commentSettings.forEach((item) => {
-        try {
-          const val = JSON.parse(item.value);
-          parsed.push(val);
-        } catch {}
-      });
-      // 등록일시 순 정렬
-      parsed.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-      setComments(parsed);
+    try {
+      const res = await fetch(`/api/community/comment?postId=${postId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setComments(data.comments || []);
+      }
+    } catch (err) {
+      console.error('Failed to load comments:', err);
     }
   };
 
@@ -148,7 +139,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
     loadPost();
   }, [postId]);
 
-  // 댓글 등록 핸들러
+  // 댓글 등록 핸들러 (서버에서 비밀번호 단방향 PBKDF2 해싱 저장)
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
     setCommentError('');
@@ -170,90 +161,96 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
     }
 
     setCommentSubmitting(true);
-    const commentId = `c_${Date.now()}`;
-    const commentObj: CommentItem = {
-      id: commentId,
-      postId: postId,
-      authorName: newCommentAuthor.trim() || '학부모',
-      content: newCommentContent.trim(),
-      passwordHash: newCommentPassword,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const res = await fetch('/api/community/comment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          postId: postId,
+          authorName: newCommentAuthor.trim() || '학부모',
+          content: newCommentContent.trim(),
+          password: newCommentPassword,
+        }),
+      });
 
-    const { error } = await supabase.from('site_settings').insert([
-      {
-        key: `comment:${postId}:${commentId}`,
-        value: JSON.stringify(commentObj),
-        updated_at: new Date().toISOString(),
-      },
-    ]);
+      const data = await res.json();
+      setCommentSubmitting(false);
 
-    setCommentSubmitting(false);
-
-    if (error) {
-      setCommentError('댓글 등록 중 오류: ' + error.message);
-    } else {
-      setNewCommentContent('');
-      setNewCommentPassword('');
-      loadComments();
+      if (!res.ok) {
+        setCommentError(data.error || '댓글 등록에 실패했습니다.');
+      } else {
+        setNewCommentContent('');
+        setNewCommentPassword('');
+        loadComments();
+      }
+    } catch (err) {
+      setCommentSubmitting(false);
+      setCommentError('네트워크 오류가 발생했습니다.');
     }
   };
 
-  // 댓글 삭제 핸들러
+  // 댓글 삭제 핸들러 (서버 사이드 검증 API 호출)
   const handleDeleteComment = async () => {
     if (!deleteCommentTarget || !deleteCommentPassword) {
       setDeleteCommentError('비밀번호를 입력해 주세요.');
       return;
     }
 
-    const isMaster = deleteCommentPassword === 'Wlswntl1234!';
-    const isOwner = deleteCommentTarget.passwordHash === deleteCommentPassword;
+    try {
+      const res = await fetch('/api/community/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'comment',
+          postId: postId,
+          commentId: deleteCommentTarget.id,
+          password: deleteCommentPassword,
+        }),
+      });
 
-    if (!isMaster && !isOwner) {
-      setDeleteCommentError('비밀번호가 일치하지 않습니다.');
-      return;
-    }
+      const data = await res.json();
+      if (!res.ok) {
+        setDeleteCommentError(data.error || '비밀번호가 일치하지 않습니다.');
+        return;
+      }
 
-    const { error } = await supabase
-      .from('site_settings')
-      .delete()
-      .eq('key', `comment:${postId}:${deleteCommentTarget.id}`);
-
-    if (error) {
-      setDeleteCommentError('댓글 삭제 오류: ' + error.message);
-    } else {
       setDeleteCommentTarget(null);
       setDeleteCommentPassword('');
       setDeleteCommentError('');
       loadComments();
+    } catch (err) {
+      setDeleteCommentError('댓글 삭제 중 통신 오류가 발생했습니다.');
     }
   };
 
-  // 글 삭제 핸들러
+  // 글 삭제 핸들러 (서버 사이드 검증 API 호출)
   const handleDeletePost = async () => {
     if (!post || !deletePassword) {
       setDeleteError('비밀번호를 입력해 주세요.');
       return;
     }
 
-    const isMaster = deletePassword === 'Wlswntl1234!';
-    const isOwner = post.password_hash === deletePassword;
+    try {
+      const res = await fetch('/api/community/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'post',
+          postId: postId,
+          password: deletePassword,
+        }),
+      });
 
-    if (!isMaster && !isOwner) {
-      setDeleteError('비밀번호가 일치하지 않습니다.');
-      return;
-    }
+      const data = await res.json();
+      if (!res.ok) {
+        setDeleteError(data.error || '비밀번호가 일치하지 않습니다.');
+        return;
+      }
 
-    const { error } = await supabase
-      .from('anonymous_posts')
-      .update({ is_deleted: true })
-      .eq('id', postId);
-
-    if (error) {
-      setDeleteError('삭제 중 오류: ' + error.message);
-    } else {
-      alert('게시글이 삭제되었습니다.');
+      alert('게시글이 안전하게 삭제되었습니다.');
       router.push('/community');
+    } catch (err) {
+      setDeleteError('삭제 중 통신 오류가 발생했습니다.');
     }
   };
 

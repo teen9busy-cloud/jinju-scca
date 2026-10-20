@@ -53,7 +53,7 @@ export interface AnonymousPost {
   id: number;
   author_name: string;
   school_name?: string;
-  password_hash: string;
+  password_hash?: string;
   title: string;
   content: string;
   view_count: number;

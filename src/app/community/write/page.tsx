@@ -3,13 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@/utils/supabase/client';
 import { validateContent } from '@/utils/badwords';
 import { ShieldCheck, ArrowLeft, Send, AlertTriangle, User, School, Lock } from 'lucide-react';
 
 export default function CommunityWritePage() {
   const router = useRouter();
-  const supabase = createClient();
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -47,23 +45,31 @@ export default function CommunityWritePage() {
     }
 
     setSubmitting(true);
-    const { error } = await supabase.from('anonymous_posts').insert([
-      {
-        title: title.trim(),
-        content: content.trim(),
-        author_name: authorName.trim() || '학부모',
-        school_name: schoolName.trim() || null,
-        password_hash: password,
-      },
-    ]);
+    try {
+      const res = await fetch('/api/community/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: title.trim(),
+          content: content.trim(),
+          authorName: authorName.trim() || '학부모',
+          schoolName: schoolName.trim() || null,
+          password: password,
+        }),
+      });
 
-    setSubmitting(false);
+      const data = await res.json();
+      setSubmitting(false);
 
-    if (error) {
-      setErrorMsg('글 등록 중 오류가 발생했습니다: ' + error.message);
-    } else {
-      alert('소중한 의견이 등록되었습니다.');
-      router.push('/community');
+      if (!res.ok) {
+        setErrorMsg(data.error || '글 등록 중 오류가 발생했습니다.');
+      } else {
+        alert('소중한 의견이 등록되었습니다.');
+        router.push('/community');
+      }
+    } catch (err: any) {
+      setSubmitting(false);
+      setErrorMsg('네트워크 통신 오류가 발생했습니다.');
     }
   };
 

@@ -102,16 +102,62 @@ export default function AdminPage() {
     description: '',
   });
 
-  // 로그인 핸들러
-  const handleLogin = (e: React.FormEvent) => {
+  // 관리자 세션 자동 복원
+  useEffect(() => {
+    fetch('/api/admin/auth')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated) {
+          setIsAuthenticated(true);
+          loadAllData();
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // 로그인 핸들러 (서버 사이드 암호 검증 및 보안 쿠키 발급)
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordInput === 'Wlswntl1234!') {
-      setIsAuthenticated(true);
-      setLoginError('');
-      loadAllData();
-    } else {
-      setLoginError('관리자 비밀번호가 일치하지 않습니다.');
+    setLoginError('');
+    try {
+      const res = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: passwordInput }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsAuthenticated(true);
+        loadAllData();
+      } else {
+        setLoginError(data.error || '관리자 비밀번호가 일치하지 않습니다.');
+      }
+    } catch (err) {
+      setLoginError('로그인 처리 중 통신 오류가 발생했습니다.');
     }
+  };
+
+  // 로그아웃 핸들러 (서버 쿠키 파기)
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/auth', { method: 'DELETE' });
+    } catch (e) {}
+    setIsAuthenticated(false);
+    setPasswordInput('');
+  };
+
+  // 관리자 전용 서버 액션 호출 헬퍼
+  const adminFetch = async (action: string, payload: any) => {
+    const res = await fetch('/api/admin/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, payload }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || '관리자 작업 처리 실패');
+    }
+    return data;
   };
 
   // 데이터 불러오기
@@ -207,7 +253,7 @@ export default function AdminPage() {
     if (ogData?.value) setOgImage(ogData.value);
   };
 
-  // 갤러리 사진 등록 핸들러
+  // 갤러리 사진 등록 핸들러 (보호된 관리자 API)
   const handleAddGallery = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGallery.title.trim()) {
@@ -215,16 +261,13 @@ export default function AdminPage() {
       return;
     }
 
-    const { error } = await supabase.from('gallery').insert([
-      {
+    try {
+      await adminFetch('add-gallery', {
         title: newGallery.title.trim(),
         content: newGallery.content.trim() || null,
         event_date: newGallery.event_date,
         images: newGallery.image_url ? [newGallery.image_url.trim()] : [],
-      },
-    ]);
-
-    if (!error) {
+      });
       alert('활동 사진이 성공적으로 등록되었습니다.');
       setNewGallery({
         title: '',
@@ -233,16 +276,20 @@ export default function AdminPage() {
         image_url: '',
       });
       loadAllData();
-    } else {
-      alert('등록 실패: ' + error.message);
+    } catch (err: any) {
+      alert('등록 실패: ' + err.message);
     }
   };
 
   // 갤러리 삭제 핸들러
   const handleDeleteGallery = async (id: number) => {
     if (!confirm('이 활동 사진을 삭제하시겠습니까?')) return;
-    const { error } = await supabase.from('gallery').delete().eq('id', id);
-    if (!error) loadAllData();
+    try {
+      await adminFetch('delete-gallery', { id });
+      loadAllData();
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   // 자료실 등록 핸들러
@@ -253,8 +300,8 @@ export default function AdminPage() {
       return;
     }
 
-    const { error } = await supabase.from('resources').insert([newResource]);
-    if (!error) {
+    try {
+      await adminFetch('add-resource', newResource);
       alert('자료가 성공적으로 등록되었습니다.');
       setNewResource({
         category: '회의록',
@@ -264,16 +311,20 @@ export default function AdminPage() {
         file_name: '',
       });
       loadAllData();
-    } else {
-      alert('자료 등록 실패: ' + error.message);
+    } catch (err: any) {
+      alert('자료 등록 실패: ' + err.message);
     }
   };
 
   // 자료실 삭제 핸들러
   const handleDeleteResource = async (id: number) => {
     if (!confirm('이 자료를 삭제하시겠습니까?')) return;
-    const { error } = await supabase.from('resources').delete().eq('id', id);
-    if (!error) loadAllData();
+    try {
+      await adminFetch('delete-resource', { id });
+      loadAllData();
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   // 새 투표 등록 핸들러
@@ -284,66 +335,52 @@ export default function AdminPage() {
       return;
     }
 
-    // 1. 투표 마스터 등록
-    const { data: voteInserted, error: voteErr } = await supabase
-      .from('official_votes')
-      .insert([
-        {
+    try {
+      await adminFetch('add-vote', {
+        voteData: {
           category: newVote.category,
           title: newVote.title.trim(),
           description: newVote.description.trim() || null,
           is_secret: newVote.is_secret,
           status: 'active',
         },
-      ])
-      .select()
-      .single();
+        options: newVote.options.filter((opt) => opt.trim().length > 0),
+      });
 
-    if (voteErr || !voteInserted) {
-      alert('투표 등록 실패: ' + voteErr?.message);
-      return;
+      alert('새 투표 및 설문 안건이 성공적으로 등록되었습니다.');
+      setNewVote({
+        category: '전체 운영위원장',
+        title: '',
+        description: '',
+        is_secret: false,
+        options: ['찬성 (원안 가결)', '반대 (원안 부결)', '기권'],
+      });
+      loadAllData();
+    } catch (err: any) {
+      alert('투표 등록 실패: ' + err.message);
     }
-
-    // 2. 선택지 등록
-    const optionsToInsert = newVote.options
-      .filter((opt) => opt.trim().length > 0)
-      .map((opt) => ({
-        vote_id: voteInserted.id,
-        option_text: opt.trim(),
-        vote_count: 0,
-      }));
-
-    if (optionsToInsert.length > 0) {
-      await supabase.from('official_vote_options').insert(optionsToInsert);
-    }
-
-    alert('새 투표 및 설문 안건이 성공적으로 등록되었습니다.');
-    setNewVote({
-      category: '전체 운영위원장',
-      title: '',
-      description: '',
-      is_secret: false,
-      options: ['찬성 (원안 가결)', '반대 (원안 부결)', '기권'],
-    });
-    loadAllData();
   };
 
   // 투표 마감/재개 토글
   const handleToggleVoteStatus = async (id: number, currentStatus: string) => {
-    const nextStatus = currentStatus === 'active' ? 'closed' : 'active';
-    const { error } = await supabase
-      .from('official_votes')
-      .update({ status: nextStatus, closed_at: nextStatus === 'closed' ? new Date().toISOString() : null })
-      .eq('id', id);
-
-    if (!error) loadAllData();
+    try {
+      const nextStatus = currentStatus === 'active' ? 'closed' : 'active';
+      await adminFetch('toggle-vote-status', { id, status: nextStatus });
+      loadAllData();
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   // 투표 삭제
   const handleDeleteVote = async (id: number) => {
     if (!confirm('이 투표 안건과 관련된 모든 투표 결과를 삭제하시겠습니까?')) return;
-    const { error } = await supabase.from('official_votes').delete().eq('id', id);
-    if (!error) loadAllData();
+    try {
+      await adminFetch('delete-vote', { id });
+      loadAllData();
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   // 임원 추가
@@ -354,8 +391,8 @@ export default function AdminPage() {
       return;
     }
 
-    const { error } = await supabase.from('executives').insert([newExec]);
-    if (!error) {
+    try {
+      await adminFetch('add-exec', newExec);
       alert('임원이 성공적으로 등록되었습니다.');
       setNewExec({
         year: 2026,
@@ -367,14 +404,20 @@ export default function AdminPage() {
         display_order: 10,
       });
       loadAllData();
+    } catch (err: any) {
+      alert(err.message);
     }
   };
 
   // 임원 삭제
   const handleDeleteExec = async (id: number) => {
     if (!confirm('정말 삭제하시겠습니까?')) return;
-    const { error } = await supabase.from('executives').delete().eq('id', id);
-    if (!error) loadAllData();
+    try {
+      await adminFetch('delete-exec', { id });
+      loadAllData();
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   // 공지사항 등록
@@ -384,56 +427,71 @@ export default function AdminPage() {
       alert('제목과 내용을 입력해 주세요.');
       return;
     }
-    const { error } = await supabase.from('notices').insert([newNotice]);
-    if (!error) {
+
+    try {
+      await adminFetch('add-notice', newNotice);
       alert('공지사항이 등록되었습니다.');
       setNewNotice({ title: '', content: '', author: '진주학운위협의회', is_pinned: false });
       loadAllData();
+    } catch (err: any) {
+      alert(err.message);
     }
   };
 
   // 공지사항 삭제
   const handleDeleteNotice = async (id: number) => {
     if (!confirm('공지사항을 삭제하시겠습니까?')) return;
-    const { error } = await supabase.from('notices').delete().eq('id', id);
-    if (!error) loadAllData();
+    try {
+      await adminFetch('delete-notice', { id });
+      loadAllData();
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   // 연혁 추가
   const handleAddHistory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newHistory.title) return;
-    const { error } = await supabase.from('history').insert([newHistory]);
-    if (!error) {
+
+    try {
+      await adminFetch('add-history', newHistory);
       alert('연혁이 추가되었습니다.');
       setNewHistory({ year: 2026, month: 5, title: '', description: '' });
       loadAllData();
+    } catch (err: any) {
+      alert(err.message);
     }
   };
 
   // 연혁 삭제
   const handleDeleteHistory = async (id: number) => {
     if (!confirm('연혁 항목을 삭제하시겠습니까?')) return;
-    const { error } = await supabase.from('history').delete().eq('id', id);
-    if (!error) loadAllData();
+    try {
+      await adminFetch('delete-history', { id });
+      loadAllData();
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   // 익명글 원클릭 삭제/복원 토글
   const handleTogglePostDelete = async (id: number, currentStatus: boolean) => {
-    const { error } = await supabase
-      .from('anonymous_posts')
-      .update({ is_deleted: !currentStatus })
-      .eq('id', id);
-    if (!error) loadAllData();
+    try {
+      await adminFetch('blind-post', { id, is_deleted: !currentStatus });
+      loadAllData();
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   // 인사말 저장
   const handleSaveGreeting = async () => {
-    const { error } = await supabase
-      .from('site_settings')
-      .upsert({ key: 'greeting', value: greeting, updated_at: new Date().toISOString() });
-    if (!error) {
+    try {
+      await adminFetch('update-setting', { key: 'greeting', value: greeting });
       alert('회장 인사말이 저장되었습니다.');
+    } catch (err: any) {
+      alert(err.message);
     }
   };
 
@@ -444,14 +502,13 @@ export default function AdminPage() {
       alert('썸네일 이미지 주소를 입력해 주세요.');
       return;
     }
-    const { error } = await supabase
-      .from('site_settings')
-      .upsert({ key: 'og_image', value: targetUrl, updated_at: new Date().toISOString() });
-    if (!error) {
+
+    try {
+      await adminFetch('update-setting', { key: 'og_image', value: targetUrl });
       setOgImage(targetUrl);
       alert('카카오톡 / SNS 공유 썸네일 설정이 저장되었습니다!\n\n※ 이미 카톡에 공유된 적이 있는 경우 아래 [카카오 공유 디버거]에서 캐시를 초기화하시면 즉시 새 이미지로 변경됩니다.');
-    } else {
-      alert('저장 중 오류: ' + error.message);
+    } catch (err: any) {
+      alert('저장 중 오류: ' + err.message);
     }
   };
 
@@ -501,7 +558,7 @@ export default function AdminPage() {
           </form>
 
           <div className="text-xs text-slate-400">
-            ※ 비밀번호: Wlswntl1234!
+            ※ 인가된 관리자만 접근 가능합니다. (보안 세션 보호)
           </div>
         </div>
       </div>
@@ -520,7 +577,7 @@ export default function AdminPage() {
           <h1 className="text-2xl font-black tracking-tight mt-1">협의회 통합 관리자 모드</h1>
         </div>
         <button
-          onClick={() => setIsAuthenticated(false)}
+          onClick={handleLogout}
           className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1.5 transition-all"
         >
           <LogOut className="w-4 h-4" /> 로그아웃
