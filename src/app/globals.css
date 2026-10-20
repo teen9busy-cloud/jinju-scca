@@ -11,8 +11,15 @@
 body {
   color: rgb(var(--foreground-rgb));
   background: #f8fafc;
-  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Malgun Gothic", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   -webkit-font-smoothing: antialiased;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+h1, h2, h3, h4, h5, h6, p, span, a, button, li {
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .text-balance {

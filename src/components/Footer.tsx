@@ -11,14 +11,14 @@ export default function Footer() {
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-2">
               <CouncilLogo size={36} variant="mark" />
-              <span className="text-white text-lg font-bold tracking-tight">
+              <span className="text-white text-lg font-bold tracking-tight break-keep">
                 학교운영위원회 진주지역협의회
               </span>
             </div>
-            <p className="text-sm text-slate-400 leading-relaxed max-w-md">
+            <p className="text-sm text-slate-400 leading-relaxed max-w-md break-keep">
               진주시 관내 유치원, 초등학교, 중학교, 고등학교, 특수학교 학교운영위원회가 상호 유기적인 협조체제를 구축하여 단위학교의 교육자치와 진주 교육 발전을 실현합니다.
             </p>
-            <div className="text-xs text-slate-500">
+            <div className="text-xs text-slate-500 break-keep">
               ※ 본 사이트는 협의회 임원 및 진주시 학부모 간 소통을 위한 자율 운영 플랫폼입니다.
             </div>
           </div>
@@ -30,17 +30,17 @@ export default function Footer() {
             </h3>
             <ul className="space-y-2.5 text-sm">
               <li>
-                <Link href="/about" className="hover:text-white transition-colors flex items-center gap-1.5">
+                <Link href="/about" className="hover:text-white transition-colors flex items-center gap-1.5 break-keep">
                   <BookOpen className="w-4 h-4 text-slate-500" /> 협의회 회칙 및 연혁
                 </Link>
               </li>
               <li>
-                <Link href="/about#organization" className="hover:text-white transition-colors flex items-center gap-1.5">
+                <Link href="/about#organization" className="hover:text-white transition-colors flex items-center gap-1.5 break-keep">
                   <Users className="w-4 h-4 text-slate-500" /> 2026년 임원진 명단
                 </Link>
               </li>
               <li>
-                <Link href="/community" className="hover:text-blue-400 transition-colors flex items-center gap-1.5 text-blue-300 font-medium">
+                <Link href="/community" className="hover:text-blue-400 transition-colors flex items-center gap-1.5 text-blue-300 font-medium break-keep">
                   <MessageSquare className="w-4 h-4 text-blue-400" /> 학부모 익명 소통방
                 </Link>
               </li>
@@ -58,7 +58,7 @@ export default function Footer() {
                   href="https://jjfe.gne.go.kr"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-white transition-colors block"
+                  className="hover:text-white transition-colors block break-keep"
                 >
                   경상남도진주교육지원청 ↗
                 </a>
@@ -68,7 +68,7 @@ export default function Footer() {
                   href="https://www.gne.go.kr"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-white transition-colors block"
+                  className="hover:text-white transition-colors block break-keep"
                 >
                   경상남도교육청 ↗
                 </a>
@@ -78,7 +78,7 @@ export default function Footer() {
                   href="https://www.jinju.go.kr"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-white transition-colors block"
+                  className="hover:text-white transition-colors block break-keep"
                 >
                   진주시청 ↗
                 </a>
@@ -88,10 +88,10 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-slate-800 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500">
-          <div>
+          <div className="break-keep">
             © {new Date().getFullYear()} 학교운영위원회 진주지역협의회. All rights reserved.
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 break-keep">
             <Link href="/about" className="hover:text-slate-400">회칙 열람</Link>
             <span>•</span>
             <Link href="/community" className="hover:text-slate-400">게시판 이용수칙</Link>
