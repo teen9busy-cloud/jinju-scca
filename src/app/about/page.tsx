@@ -11,7 +11,12 @@ import {
   School, 
   Shield, 
   Briefcase,
-  History as HistoryIcon
+  History as HistoryIcon,
+  BarChart3,
+  Building2,
+  Utensils,
+  GraduationCap,
+  PieChart
 } from 'lucide-react';
 
 export default async function AboutPage() {
@@ -113,6 +118,187 @@ export default async function AboutPage() {
                 </p>
               </div>
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* 2. 2026년 진주시 학교운영위원회 구성 및 운영 현황 (공식 통계 요약) */}
+      <section id="statistics" className="space-y-8 pt-4">
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold">
+            <BarChart3 className="w-3.5 h-3.5 text-blue-600" /> 2026 공식 집계 데이터
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight break-keep">
+            2026년 진주시 학교운영위원회 구성 및 운영 현황
+          </h2>
+          <p className="text-slate-600 text-xs sm:text-sm max-w-2xl mx-auto break-keep">
+            진주시 관내 유·초·중·고·특수학교 총 92개교의 운영위원회 구성 지표 및 연간 운영 실적을 요약하여 안내합니다.
+          </p>
+        </div>
+
+        {/* 4대 핵심 지표 카드 */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-sm space-y-2 hover:border-blue-300 transition-all">
+            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <div className="text-xs text-slate-500 font-semibold">진주시 관내 학교</div>
+            <div className="text-2xl sm:text-3xl font-black text-slate-900">
+              92<span className="text-sm sm:text-base font-bold text-slate-500 ml-1">개교</span>
+            </div>
+            <div className="text-[11px] text-slate-400">초 47 · 중 22 · 고 21 · 특수/각종 2</div>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-sm space-y-2 hover:border-indigo-300 transition-all">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+              <Users className="w-5 h-5" />
+            </div>
+            <div className="text-xs text-slate-500 font-semibold">총 운영위원 정수</div>
+            <div className="text-2xl sm:text-3xl font-black text-indigo-900">
+              897<span className="text-sm sm:text-base font-bold text-slate-500 ml-1">명</span>
+            </div>
+            <div className="text-[11px] text-slate-400">학부모 415 · 교원 324 · 지역 158</div>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-sm space-y-2 hover:border-emerald-300 transition-all">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+              <GraduationCap className="w-5 h-5" />
+            </div>
+            <div className="text-xs text-slate-500 font-semibold">학부모위원 비율</div>
+            <div className="text-2xl sm:text-3xl font-black text-emerald-700">
+              46.3<span className="text-sm sm:text-base font-bold text-slate-500 ml-1">%</span>
+            </div>
+            <div className="text-[11px] text-slate-400">415명 참여로 교육공동체 중심</div>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-sm space-y-2 hover:border-amber-300 transition-all">
+            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+              <PieChart className="w-5 h-5" />
+            </div>
+            <div className="text-xs text-slate-500 font-semibold">여성위원 참여율</div>
+            <div className="text-2xl sm:text-3xl font-black text-amber-700">
+              58.6<span className="text-sm sm:text-base font-bold text-slate-500 ml-1">%</span>
+            </div>
+            <div className="text-[11px] text-slate-400">총 526명으로 포용적 자치 실현</div>
+          </div>
+        </div>
+
+        {/* 학교급별 세부 현황 표 & 주요 운영 실적 */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* 학교급별 구성 현황 (2열 차지) */}
+          <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-4">
+            <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-blue-600" /> 학교급별 위원 구성 현황
+            </h3>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs sm:text-sm border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-y border-slate-200 text-slate-700 font-bold text-center h-10">
+                    <th className="py-2.5 px-3">학교급</th>
+                    <th className="py-2.5 px-3">학교수</th>
+                    <th className="py-2.5 px-3">학부모위원</th>
+                    <th className="py-2.5 px-3">교원위원</th>
+                    <th className="py-2.5 px-3">지역위원</th>
+                    <th className="py-2.5 px-3 bg-blue-50/60 text-blue-900">총 위원수</th>
+                    <th className="py-2.5 px-3">위원장</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-center text-slate-600">
+                  <tr className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-3 px-3 font-bold text-slate-900">초등학교</td>
+                    <td className="py-3 px-3">47개교</td>
+                    <td className="py-3 px-3 text-blue-600 font-semibold">210명</td>
+                    <td className="py-3 px-3">171명</td>
+                    <td className="py-3 px-3">74명</td>
+                    <td className="py-3 px-3 font-bold text-slate-900 bg-blue-50/40">455명</td>
+                    <td className="py-3 px-3 text-xs">남 27 / 여 19</td>
+                  </tr>
+                  <tr className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-3 px-3 font-bold text-slate-900">중학교</td>
+                    <td className="py-3 px-3">22개교</td>
+                    <td className="py-3 px-3 text-blue-600 font-semibold">96명</td>
+                    <td className="py-3 px-3">74명</td>
+                    <td className="py-3 px-3">35명</td>
+                    <td className="py-3 px-3 font-bold text-slate-900 bg-blue-50/40">205명</td>
+                    <td className="py-3 px-3 text-xs">남 12 / 여 9</td>
+                  </tr>
+                  <tr className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-3 px-3 font-bold text-slate-900">고등학교</td>
+                    <td className="py-3 px-3">21개교</td>
+                    <td className="py-3 px-3 text-blue-600 font-semibold">101명</td>
+                    <td className="py-3 px-3">73명</td>
+                    <td className="py-3 px-3">47명</td>
+                    <td className="py-3 px-3 font-bold text-slate-900 bg-blue-50/40">221명</td>
+                    <td className="py-3 px-3 text-xs">남 16 / 여 5</td>
+                  </tr>
+                  <tr className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-3 px-3 font-bold text-slate-900">특수·각종학교</td>
+                    <td className="py-3 px-3">2개교</td>
+                    <td className="py-3 px-3 text-blue-600 font-semibold">8명</td>
+                    <td className="py-3 px-3">6명</td>
+                    <td className="py-3 px-3">2명</td>
+                    <td className="py-3 px-3 font-bold text-slate-900 bg-blue-50/40">16명</td>
+                    <td className="py-3 px-3 text-xs">남 1 / 여 1</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr className="bg-slate-100/80 font-black text-slate-900 text-center border-t border-slate-200">
+                    <td className="py-3 px-3">합계</td>
+                    <td className="py-3 px-3">92개교</td>
+                    <td className="py-3 px-3 text-blue-700">415명 (46.3%)</td>
+                    <td className="py-3 px-3">324명 (36.1%)</td>
+                    <td className="py-3 px-3">158명 (17.6%)</td>
+                    <td className="py-3 px-3 text-blue-700 bg-blue-100/50">897명</td>
+                    <td className="py-3 px-3 text-xs">남 56 / 여 33 (총 89명)</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <p className="text-[11px] text-slate-400">
+              * 금빛초(금곡중과 통합설치), 진서중(진서고와 통합설치) 반영 기준.
+            </p>
+          </div>
+
+          {/* 주요 운영 실적 하이라이트 (1열 차지) */}
+          <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-7 shadow-sm space-y-5 flex flex-col justify-between">
+            <div className="space-y-4">
+              <h3 className="font-bold text-white text-base flex items-center gap-2">
+                <Award className="w-4 h-4 text-amber-400" /> 주요 운영 실적
+              </h3>
+
+              <div className="space-y-3.5 text-xs sm:text-sm">
+                <div className="bg-white/10 p-3.5 rounded-2xl border border-white/10 space-y-1">
+                  <div className="text-slate-300 text-xs">연간 총 회의 개최수</div>
+                  <div className="text-xl font-black text-white">
+                    431<span className="text-xs font-normal text-slate-300 ml-1">회 개최</span>
+                  </div>
+                  <div className="text-[11px] text-blue-200">학교당 연평균 4.8회 정기·임시회 소집</div>
+                </div>
+
+                <div className="bg-white/10 p-3.5 rounded-2xl border border-white/10 space-y-1">
+                  <div className="text-slate-300 text-xs flex items-center gap-1.5">
+                    <Utensils className="w-3.5 h-3.5 text-emerald-400" /> 급식소위원회 구성율
+                  </div>
+                  <div className="text-xl font-black text-emerald-300">
+                    96.6<span className="text-xs font-normal text-slate-300 ml-1">% (86개교)</span>
+                  </div>
+                  <div className="text-[11px] text-emerald-200">급식 위생·식재료 안전 철저 검증</div>
+                </div>
+
+                <div className="bg-white/10 p-3.5 rounded-2xl border border-white/10 space-y-1">
+                  <div className="text-slate-300 text-xs">학생 참여 회의수</div>
+                  <div className="text-xl font-black text-amber-300">
+                    155<span className="text-xs font-normal text-slate-300 ml-1">회</span>
+                  </div>
+                  <div className="text-[11px] text-amber-200">학생 의견 청취 및 안건 제안 보장</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-[11px] text-slate-400 pt-2 border-t border-white/10">
+              ※ 출처: 2026 진주시 학교운영위원회 공식 현황 통계
+            </div>
           </div>
         </div>
       </section>

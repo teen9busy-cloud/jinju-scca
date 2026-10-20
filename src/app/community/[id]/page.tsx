@@ -299,7 +299,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
       {/* 2. 게시글 상세 카드 */}
       <article className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100">
         {/* 상단 메타 헤더 */}
-        <div className="p-6 sm:p-8 space-y-4 bg-slate-50/50">
+        <div className="p-5 sm:p-6 space-y-3 bg-slate-50/50">
           <div className="flex flex-wrap items-center gap-2">
             {post.school_name && (
               <span className="px-2.5 py-1 rounded-md bg-blue-100 text-blue-800 font-bold text-xs">
@@ -309,7 +309,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
             <span className="text-xs text-slate-400">게시글 번호 #{post.id}</span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-snug break-keep">
+          <h1 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight leading-snug break-keep">
             {post.title}
           </h1>
 
@@ -337,8 +337,8 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
         </div>
 
         {/* 본문 영역 (시원하고 편안한 줄바꿈) */}
-        <div className="p-6 sm:p-8 min-h-[220px]">
-          <div className="text-slate-800 text-base sm:text-lg leading-relaxed whitespace-pre-line break-keep font-normal select-text">
+        <div className="p-5 sm:p-6 min-h-[160px]">
+          <div className="text-slate-800 text-sm sm:text-[15px] leading-relaxed whitespace-pre-line break-keep font-normal select-text">
             {post.content}
           </div>
         </div>
