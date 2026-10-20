@@ -7,7 +7,6 @@ import {
   Menu, 
   X, 
   Shield, 
-  Lock, 
   Vote, 
   UserPlus, 
   UserCheck, 
@@ -72,7 +71,7 @@ export default function Navbar() {
             <span className="hidden sm:inline">진주시 유·초·중·고·특수학교 </span>학교운영위원장 협조기구
           </span>
 
-          {/* 우측 유틸리티 버튼군: 운영위원 가입/등록 | 유권자 확인 | 관리자 */}
+          {/* 우측 유틸리티 버튼군: 운영위원 가입/등록 | 유권자 확인 */}
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             {voterSession ? (
               <div className="flex items-center gap-2 sm:gap-3">
@@ -113,16 +112,6 @@ export default function Navbar() {
                 </Link>
               </div>
             )}
-
-            <span className="text-slate-600">|</span>
-
-            {/* 관리자 버튼 */}
-            <Link 
-              href="/admin" 
-              className="text-slate-300 hover:text-white flex items-center gap-1 transition-colors whitespace-nowrap font-bold text-xs"
-            >
-              <Lock className="w-3.5 h-3.5" /> 관리자
-            </Link>
           </div>
         </div>
       </div>
@@ -254,14 +243,6 @@ export default function Navbar() {
                 </Link>
               </>
             )}
-
-            <Link
-              href="/admin"
-              onClick={() => setIsOpen(false)}
-              className="block px-5 py-3 text-base text-slate-600 font-bold hover:text-slate-900"
-            >
-              🔒 임원 관리자 모드
-            </Link>
           </div>
         </div>
       )}
