@@ -36,6 +36,15 @@ export default async function AboutPage() {
     .order('year', { ascending: false })
     .order('display_order', { ascending: true });
 
+  // 사이트 설정 (인사말 등) 가져오기
+  const { data: settingData } = await supabase
+    .from('site_settings')
+    .select('*')
+    .eq('key', 'greeting')
+    .maybeSingle();
+
+  const greetingContent = settingData?.value;
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-20">
       {/* 헤더 */}
@@ -51,7 +60,7 @@ export default async function AboutPage() {
         </p>
       </div>
 
-      {/* 1. 협회장(이준부 회장) 프로필 및 취임 인사말 */}
+      {/* 1. 협회장(이준부 회장) 프로필 및 인사말 */}
       <section className="bg-white rounded-3xl border-2 border-slate-200 p-8 sm:p-12 shadow-sm">
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center lg:items-start">
           {/* 협회장 사진 & 프로필 */}
@@ -77,34 +86,33 @@ export default async function AboutPage() {
           {/* 인사말 본문 */}
           <div className="space-y-5 flex-1">
             <div className="flex items-center gap-2 text-blue-600 text-xs font-bold uppercase tracking-wider">
-              <Award className="w-4 h-4" /> 협의회장 취임 인사말
+              <Award className="w-4 h-4" /> 협의회장 인사말
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-snug break-keep">
               "소통과 신뢰로 함께 여는 진주 교육의 희망찬 내일"
             </h2>
 
-            <div className="space-y-4 text-slate-700 text-base leading-relaxed break-keep">
-              <p>
-                존경하는 진주시 학부모님과 학교운영위원, 그리고 교육가족 여러분, 안녕하십니까.<br />
-                학교운영위원회 진주지역협의회 홈페이지를 찾아주신 여러분을 진심으로 환영합니다.
-              </p>
-              <p>
-                유구한 역사와 충절의 고장이자 천년 교육의 요람인 우리 진주는 예로부터 올곧은 인재를 길러온 자랑스러운 배움터입니다. 급변하는 교육 환경 속에서 우리 아이들이 안전하고 행복하게 꿈을 키워갈 수 있도록 돕는 것은 우리 교육공동체 모두의 소중한 사명입니다.
-              </p>
-              <p>
-                저희 협의회는 진주시 관내 유치원, 초등학교, 중학교, 고등학교, 특수학교의 모든 운영위원장님들과 머리를 맞대고, <strong>단위학교의 교육 자치 실현과 학교 간 유기적인 협조체제 구축</strong>을 위해 최선을 다하겠습니다. 특히 교육 현장의 생생한 목소리와 학부모님들의 진솔한 의견을 수렴하여 진주교육지원청 및 유관기관과 적극적으로 소통하는 <strong>든든한 가교</strong>가 되겠습니다.
-              </p>
-              <p className="pt-1">
-                진주 교육가족 여러분의 가정에 늘 건강과 행복이 가득하시기를 진심으로 기원합니다. 감사합니다.
-              </p>
-            </div>
-
-            <div className="pt-5 border-t border-slate-100 flex justify-between items-center text-sm sm:text-base">
-              <span className="text-slate-400 text-sm">학교운영위원회 진주지역협의회</span>
-              <span className="font-black text-slate-900 text-lg">
-                회장 이 준 부
-              </span>
-            </div>
+            {greetingContent ? (
+              <div className="text-slate-700 text-base leading-relaxed break-keep whitespace-pre-line">
+                {greetingContent}
+              </div>
+            ) : (
+              <div className="space-y-4 text-slate-700 text-base leading-relaxed break-keep">
+                <p>
+                  존경하는 진주시 학부모님과 학교운영위원, 그리고 교육가족 여러분, 안녕하십니까.<br />
+                  학교운영위원회 진주지역협의회 홈페이지를 찾아주신 여러분을 진심으로 환영합니다.
+                </p>
+                <p>
+                  유구한 역사와 충절의 고장이자 천년 교육의 요람인 우리 진주는 예로부터 올곧은 인재를 길러온 자랑스러운 배움터입니다. 급변하는 교육 환경 속에서 우리 아이들이 안전하고 행복하게 꿈을 키워갈 수 있도록 돕는 것은 우리 교육공동체 모두의 소중한 사명입니다.
+                </p>
+                <p>
+                  저희 협의회는 진주시 관내 유치원, 초등학교, 중학교, 고등학교, 특수학교의 모든 운영위원장님들과 머리를 맞대고, <strong>단위학교의 교육 자치 실현과 학교 간 유기적인 협조체제 구축</strong>을 위해 최선을 다하겠습니다. 특히 교육 현장의 생생한 목소리와 학부모님들의 진솔한 의견을 수렴하여 진주교육지원청 및 유관기관과 적극적으로 소통하는 <strong>든든한 가교</strong>가 되겠습니다.
+                </p>
+                <p className="pt-1">
+                  진주 교육가족 여러분의 가정에 늘 건강과 행복이 가득하시기를 진심으로 기원합니다. 감사합니다.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </section>
