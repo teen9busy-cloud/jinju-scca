@@ -13,7 +13,8 @@ import {
   Lock, 
   Phone, 
   Vote, 
-  CheckCircle2, 
+  CheckCircle2,
+  Check, 
   AlertCircle, 
   ArrowRight,
   Search,
@@ -60,8 +61,19 @@ function RegisterContent() {
   const initialTab = searchParams.get('tab') === 'check' ? 'check' : 'register';
   const [activeTab, setActiveTab] = useState<'register' | 'check'>(initialTab);
 
-  // 등록 폼 상태
-  const [role, setRole] = useState<'학교운영위원장' | '협의회 임원' | '학교운영위원' | '학부모'>('학교운영위원장');
+  // 등록 폼 상태 (직책 중복 선택 지원)
+  const [roles, setRoles] = useState<string[]>(['학교운영위원장']);
+
+  const toggleRole = (targetRole: string) => {
+    setRoles((prev) => {
+      if (prev.includes(targetRole)) {
+        if (prev.length <= 1) return prev; // 최소 1개는 필수 선택 유지
+        return prev.filter((r) => r !== targetRole);
+      } else {
+        return [...prev, targetRole];
+      }
+    });
+  };
   const [school, setSchool] = useState('');
   const [customSchool, setCustomSchool] = useState('');
   const [name, setName] = useState('');
@@ -92,7 +104,10 @@ function RegisterContent() {
     if (kakaoAuth && kakaoId) {
       if (kakaoName && !name) setName(kakaoName);
       if (kakaoSchool && !school) setSchool(kakaoSchool);
-      if (kakaoRole) setRole(kakaoRole as any);
+      if (kakaoRole) {
+        const parsed = kakaoRole.split(',').map((s: string) => s.trim()).filter(Boolean);
+        if (parsed.length > 0) setRoles(parsed);
+      }
 
       // 이미 등록된 정회원이 카카오로 로그인한 경우 자동 세션 동기화
       if (kakaoSchool && kakaoName) {
@@ -149,7 +164,8 @@ function RegisterContent() {
           name: name.trim(),
           school: effectiveSchool,
           password: password || (kakaoId ? `k_${kakaoId.slice(-6)}` : '1234'),
-          role: role,
+          role: roles.join(', '),
+          roles: roles,
           phone: phone.trim() || null,
           kakao_id: kakaoId || null,
           email: kakaoEmail || null,
@@ -434,31 +450,107 @@ function RegisterContent() {
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {/* 직책 구분 */}
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-black text-slate-700 mb-2">
-                    참여 직책 구분 <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {/* 직책 구분 (중복 선택 지원) */}
+                <div className="sm:col-span-2 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-black text-slate-800 flex items-center gap-2">
+                      <span>참여 직책 구분</span>
+                      <span className="text-rose-500">*</span>
+                      <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
+                        중복 선택 가능
+                      </span>
+                    </label>
+                    <span className="text-[11px] font-semibold text-slate-500">
+                      {roles.length}개 직책 선택됨
+                    </span>
+                  </div>
+
+                  {/* 모바일 친절 안내 박스 */}
+                  <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 text-xs text-amber-950 flex items-start gap-2.5 leading-relaxed shadow-xs">
+                    <span className="text-base flex-shrink-0">💡</span>
+                    <div>
+                      <strong className="text-amber-900 font-black">운영위원장이면서 협의회 임원</strong>이신 경우, 아래에서 <strong className="text-amber-900 underline font-black">두 항목을 모두 터치(체크)</strong>해 주세요.
+                      <div className="text-[11px] text-amber-800 mt-0.5">
+                        한 번의 등록으로 [전체 운영위원장 투표]와 [협의회 임원단 투표]에 모두 1인 1표로 참여하실 수 있습니다.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                     {[
-                      { key: '학교운영위원장', label: '학교운영위원장' },
-                      { key: '협의회 임원', label: '협의회 임원단' },
-                      { key: '학교운영위원', label: '학교운영위원' },
-                      { key: '학부모', label: '일반 학부모' },
-                    ].map((item) => (
-                      <button
-                        key={item.key}
-                        type="button"
-                        onClick={() => setRole(item.key as any)}
-                        className={`py-3 px-3 rounded-2xl text-xs font-black border-2 transition-all text-center ${
-                          role === item.key
-                            ? 'border-indigo-600 bg-indigo-50 text-indigo-900 shadow-sm'
-                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-                        }`}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
+                      {
+                        key: '학교운영위원장',
+                        label: '학교운영위원장',
+                        desc: '진주시 관내 각급 학교 및 유치원 운영위원장',
+                        badge: '전체 투표권',
+                      },
+                      {
+                        key: '협의회 임원',
+                        label: '협의회 임원단',
+                        desc: '협의회 회장단, 감사, 사무국 임원진',
+                        badge: '임원단 투표권',
+                      },
+                      {
+                        key: '학교운영위원',
+                        label: '학교운영위원',
+                        desc: '학부모위원, 지역위원, 교원위원',
+                        badge: '일반 참여',
+                      },
+                      {
+                        key: '학부모',
+                        label: '일반 학부모',
+                        desc: '진주시 관내 유·초·중·고·특수학교 학부모',
+                        badge: '설문 참여',
+                      },
+                    ].map((item) => {
+                      const isSelected = roles.includes(item.key);
+                      return (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => toggleRole(item.key)}
+                          className={`relative p-3.5 sm:p-4 rounded-2xl border-2 transition-all text-left flex items-start justify-between gap-3 active:scale-[0.99] select-none ${
+                            isSelected
+                              ? 'border-indigo-600 bg-indigo-50/80 shadow-sm text-indigo-950'
+                              : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div
+                              className={`w-5 h-5 rounded-md border-2 mt-0.5 flex items-center justify-center flex-shrink-0 transition-colors ${
+                                isSelected
+                                  ? 'bg-indigo-600 border-indigo-600 text-white'
+                                  : 'border-slate-300 bg-white'
+                              }`}
+                            >
+                              {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                            </div>
+                            <div>
+                              <div className="text-sm font-black flex items-center gap-2">
+                                <span>{item.label}</span>
+                                <span
+                                  className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                                    isSelected
+                                      ? 'bg-indigo-200/80 text-indigo-900'
+                                      : 'bg-slate-100 text-slate-500'
+                                  }`}
+                                >
+                                  {item.badge}
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                                {item.desc}
+                              </div>
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <span className="text-[10px] font-black text-indigo-600 bg-white border border-indigo-200 px-2 py-0.5 rounded-full flex-shrink-0">
+                              선택됨 ✓
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 

@@ -402,6 +402,21 @@ export default function VotePage() {
                       setSelectedOptionId(null);
                       setErrorMsg('');
                       setSuccessMsg('');
+                      
+                      // 복수 직책(운영위원장 겸 협의회 임원) 보유 시 투표 안건 구분에 맞춰 자동 최적화
+                      if (currentUser) {
+                        const userRole = currentUser.role || '';
+                        if (vote.category === '협의회 임원단' && userRole.includes('협의회 임원')) {
+                          setRoleType('협의회 임원');
+                        } else if (vote.category === '전체 운영위원장' && userRole.includes('학교운영위원장')) {
+                          setRoleType('학교운영위원장');
+                        } else if (userRole.includes('학교운영위원장')) {
+                          setRoleType('학교운영위원장');
+                        } else if (userRole.includes('협의회 임원')) {
+                          setRoleType('협의회 임원');
+                        }
+                      }
+
                       setVoteModalOpen(true);
                     }}
                     className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md transition-all hover:scale-105 flex items-center gap-1.5"
