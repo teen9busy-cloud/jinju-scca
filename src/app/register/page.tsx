@@ -102,7 +102,7 @@ function RegisterContent() {
 
   useEffect(() => {
     if (kakaoAuth && kakaoId) {
-      if (kakaoName && !name) setName(kakaoName);
+      if (kakaoName && kakaoName !== '카카오회원' && !name) setName(kakaoName);
       if (kakaoSchool && !school) setSchool(kakaoSchool);
       if (kakaoRole) {
         const parsed = kakaoRole.split(',').map((s: string) => s.trim()).filter(Boolean);
@@ -417,7 +417,7 @@ function RegisterContent() {
                         <span className="bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">1인 1표 보장</span>
                       </div>
                       <div className="text-base font-black text-slate-900 mt-0.5">
-                        {kakaoName || name} 위원님 <span className="text-xs text-slate-500 font-medium">(고유식별: ****{kakaoId.slice(-4)})</span>
+                        {kakaoName && kakaoName !== '카카오회원' ? kakaoName : (name || '인증')} 위원님 <span className="text-xs text-slate-500 font-medium">(고유식별: ****{kakaoId.slice(-4)})</span>
                       </div>
                     </div>
                   </div>
