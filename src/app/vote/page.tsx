@@ -82,6 +82,29 @@ export default function VotePage() {
   useEffect(() => {
     fetchVotes();
     try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const kakaoAuth = urlParams.get('kakao_auth') === 'success';
+      const kakaoId = urlParams.get('kakao_id');
+      const kakaoName = urlParams.get('name');
+      const kakaoSchool = urlParams.get('school');
+      const kakaoRole = urlParams.get('role');
+
+      if (kakaoAuth && kakaoId && kakaoName) {
+        const u = {
+          name: kakaoName,
+          school: kakaoSchool || '',
+          role: kakaoRole || '학교운영위원',
+          kakao_id: kakaoId,
+          registered_at: new Date().toISOString(),
+        };
+        localStorage.setItem('jinju_scca_voter', JSON.stringify(u));
+        setCurrentUser(u);
+        setVoterName(kakaoName);
+        if (kakaoSchool) setSchoolName(kakaoSchool);
+        if (kakaoRole) setRoleType(kakaoRole as any);
+        return;
+      }
+
       const saved = localStorage.getItem('jinju_scca_voter');
       if (saved) {
         const u = JSON.parse(saved);
@@ -429,8 +452,22 @@ export default function VotePage() {
             <form onSubmit={handleVoteSubmit} className="space-y-4 text-sm">
               {/* 참여자 정보 */}
               <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/60">
-                <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-indigo-600" /> 참여자 본인 확인
+                <div className="text-xs font-bold text-slate-800 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-indigo-600" /> 참여자 본인 확인
+                  </span>
+                  {currentUser?.kakao_id ? (
+                    <span className="text-[10px] bg-amber-300 text-amber-950 px-2.5 py-0.5 rounded-full font-black flex items-center gap-1">
+                      💬 카카오 본인확인 완료
+                    </span>
+                  ) : (
+                    <a
+                      href="/api/auth/kakao?returnTo=/vote"
+                      className="text-[11px] font-bold text-amber-900 bg-[#FEE500] hover:bg-[#FADA0A] px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1"
+                    >
+                      💬 카카오 1초 인증
+                    </a>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-2.5">

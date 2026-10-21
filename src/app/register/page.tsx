@@ -81,6 +81,35 @@ function RegisterContent() {
   // 현재 로그인/인증된 세션
   const [currentUser, setCurrentUser] = useState<any>(null);
 
+  const kakaoAuth = searchParams.get('kakao_auth') === 'success';
+  const kakaoId = searchParams.get('kakao_id');
+  const kakaoName = searchParams.get('name');
+  const kakaoSchool = searchParams.get('school');
+  const kakaoRole = searchParams.get('role');
+  const kakaoEmail = searchParams.get('email');
+
+  useEffect(() => {
+    if (kakaoAuth && kakaoId) {
+      if (kakaoName && !name) setName(kakaoName);
+      if (kakaoSchool && !school) setSchool(kakaoSchool);
+      if (kakaoRole) setRole(kakaoRole as any);
+
+      // 이미 등록된 정회원이 카카오로 로그인한 경우 자동 세션 동기화
+      if (kakaoSchool && kakaoName) {
+        const u = {
+          name: kakaoName,
+          school: kakaoSchool,
+          role: kakaoRole || '학교운영위원장',
+          kakao_id: kakaoId,
+          registered_at: new Date().toISOString(),
+        };
+        localStorage.setItem('jinju_scca_voter', JSON.stringify(u));
+        setCurrentUser(u);
+        window.dispatchEvent(new Event('voter-session-updated'));
+      }
+    }
+  }, [kakaoAuth, kakaoId, kakaoName, kakaoSchool, kakaoRole]);
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem('jinju_scca_voter');
@@ -105,7 +134,7 @@ function RegisterContent() {
       setErrorMsg('성명을 입력해 주세요.');
       return;
     }
-    if (!password || password.length < 4) {
+    if (!kakaoId && (!password || password.length < 4)) {
       setErrorMsg('본인 확인용 비밀번호(4자 이상)를 입력해 주세요.');
       return;
     }
@@ -119,9 +148,11 @@ function RegisterContent() {
         body: JSON.stringify({
           name: name.trim(),
           school: effectiveSchool,
-          password: password,
+          password: password || (kakaoId ? `k_${kakaoId.slice(-6)}` : '1234'),
           role: role,
           phone: phone.trim() || null,
+          kakao_id: kakaoId || null,
+          email: kakaoEmail || null,
         }),
       });
 
@@ -339,10 +370,56 @@ function RegisterContent() {
             </div>
           ) : (
             <form onSubmit={handleRegister} className="space-y-6">
+              {/* 카카오 간편 본인인증 배너 */}
+              {kakaoId ? (
+                <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border-2 border-amber-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm animate-in fade-in">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-[#FEE500] text-[#191919] flex items-center justify-center font-black text-xl shadow-sm flex-shrink-0">
+                      💬
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-amber-900 flex items-center gap-2">
+                        <span>카카오 본인인증 완료</span>
+                        <span className="bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">1인 1표 보장</span>
+                      </div>
+                      <div className="text-base font-black text-slate-900 mt-0.5">
+                        {kakaoName || name} 위원님 <span className="text-xs text-slate-500 font-medium">(고유번호: ****{kakaoId.slice(-4)})</span>
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-xs text-amber-800 font-bold bg-amber-200/60 px-3 py-1.5 rounded-xl">인증 확인됨</span>
+                </div>
+              ) : (
+                <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-100/60 border-2 border-amber-300 text-center space-y-3.5 shadow-sm">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-200/90 text-amber-950 text-xs font-black shadow-xs">
+                    ⚡ 1초 간편 본인확인 (적극 권장)
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-lg sm:text-xl font-black text-slate-900">
+                      카카오톡으로 1초 만에 본인확인하고 가입하기
+                    </h3>
+                    <p className="text-xs text-slate-600 max-w-md mx-auto break-keep">
+                      인증번호나 메일을 기다릴 필요 없이, 카카오톡 터치 1번으로 본인확인 및 1인 1표 전자투표 자격이 안전하게 부여됩니다.
+                    </p>
+                  </div>
+                  <div className="pt-1">
+                    <a
+                      href="/api/auth/kakao?returnTo=/register"
+                      className="inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#FEE500] hover:bg-[#FADA0A] text-[#191919] font-black text-sm sm:text-base shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+                    >
+                      <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                        <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.122.49.18.483.378.352.155-.103 2.46-1.67 3.456-2.35.55.08 1.11.119 1.676.119 4.97 0 9-3.185 9-7.115S16.97 3 12 3z"/>
+                      </svg>
+                      카카오톡으로 1초 본인인증 시작하기
+                    </a>
+                  </div>
+                </div>
+              )}
+
               <div className="border-b border-slate-100 pb-4">
                 <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
                   <UserPlus className="w-5 h-5 text-amber-500" />
-                  운영위원 정보 입력
+                  소속 학교 및 상세 정보 입력
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">
                   진주시 관내 각급 학교 학교운영위원 및 교육가족 유권자 등록 절차입니다.
