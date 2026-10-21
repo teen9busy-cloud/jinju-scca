@@ -6,6 +6,13 @@ export async function POST(req: NextRequest) {
   try {
     const { name, school, password, role, phone, kakao_id, email } = await req.json();
 
+    if (!kakao_id) {
+      return NextResponse.json(
+        { error: '1인 1표 공정 선거 및 대리 가입 방지를 위해 카카오톡 본인인증이 필수입니다.' },
+        { status: 400 }
+      );
+    }
+
     if (!name?.trim() || !school?.trim()) {
       return NextResponse.json(
         { error: '성명과 소속 학교명을 모두 입력해 주세요.' },

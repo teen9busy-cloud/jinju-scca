@@ -141,6 +141,11 @@ function RegisterContent() {
     e.preventDefault();
     setErrorMsg('');
 
+    if (!kakaoId) {
+      setErrorMsg('1인 1표 공정 선거를 위해 상단의 [카카오톡으로 1초 본인인증하기]를 먼저 완료해 주세요.');
+      return;
+    }
+
     if (!effectiveSchool) {
       setErrorMsg('소속 학교(유치원)를 선택하거나 입력해 주세요.');
       return;
@@ -386,7 +391,7 @@ function RegisterContent() {
             </div>
           ) : (
             <form onSubmit={handleRegister} className="space-y-6">
-              {/* 카카오 간편 본인인증 배너 */}
+              {/* 카카오 간편 본인인증 필수 안내 */}
               {kakaoId ? (
                 <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border-2 border-amber-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm animate-in fade-in">
                   <div className="flex items-center gap-3">
@@ -399,48 +404,66 @@ function RegisterContent() {
                         <span className="bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">1인 1표 보장</span>
                       </div>
                       <div className="text-base font-black text-slate-900 mt-0.5">
-                        {kakaoName || name} 위원님 <span className="text-xs text-slate-500 font-medium">(고유번호: ****{kakaoId.slice(-4)})</span>
+                        {kakaoName || name} 위원님 <span className="text-xs text-slate-500 font-medium">(고유식별: ****{kakaoId.slice(-4)})</span>
                       </div>
                     </div>
                   </div>
-                  <span className="text-xs text-amber-800 font-bold bg-amber-200/60 px-3 py-1.5 rounded-xl">인증 확인됨</span>
+                  <span className="text-xs text-amber-900 font-bold bg-amber-200/80 px-3 py-1.5 rounded-xl flex items-center gap-1">
+                    <Check className="w-3.5 h-3.5 stroke-[3]" /> 본인확인 완료
+                  </span>
                 </div>
               ) : (
-                <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-100/60 border-2 border-amber-300 text-center space-y-3.5 shadow-sm">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-200/90 text-amber-950 text-xs font-black shadow-xs">
-                    ⚡ 1초 간편 본인확인 (적극 권장)
+                <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-100/70 border-2 border-amber-300 text-center space-y-4 shadow-sm">
+                  <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-200/90 text-amber-950 text-xs font-black shadow-xs">
+                    🛡️ 1인 1표 공정선거 필수 절차
                   </div>
-                  <div className="space-y-1">
-                    <h3 className="text-lg sm:text-xl font-black text-slate-900">
-                      카카오톡으로 1초 만에 본인확인하고 가입하기
+                  <div className="space-y-1.5">
+                    <h3 className="text-xl sm:text-2xl font-black text-slate-900">
+                      카카오톡 본인인증 후 등록이 진행됩니다
                     </h3>
-                    <p className="text-xs text-slate-600 max-w-md mx-auto break-keep">
-                      인증번호나 메일을 기다릴 필요 없이, 카카오톡 터치 1번으로 본인확인 및 1인 1표 전자투표 자격이 안전하게 부여됩니다.
+                    <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto break-keep">
+                      대리 가입 및 명의 도용을 원천 차단하고 공정한 1인 1표 전자투표를 보장하기 위해, 카카오톡 1초 본인인증을 먼저 진행해 주세요.
                     </p>
                   </div>
-                  <div className="pt-1">
+                  <div className="pt-2">
                     <a
                       href="/api/auth/kakao?returnTo=/register"
-                      className="inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#FEE500] hover:bg-[#FADA0A] text-[#191919] font-black text-sm sm:text-base shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+                      className="inline-flex items-center justify-center gap-3 w-full sm:w-auto px-9 py-4 rounded-2xl bg-[#FEE500] hover:bg-[#FADA0A] text-[#191919] font-black text-base shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
                     >
                       <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                         <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.122.49.18.483.378.352.155-.103 2.46-1.67 3.456-2.35.55.08 1.11.119 1.676.119 4.97 0 9-3.185 9-7.115S16.97 3 12 3z"/>
                       </svg>
-                      카카오톡으로 1초 본인인증 시작하기
+                      카카오톡으로 1초 본인인증하기 (필수)
                     </a>
                   </div>
                 </div>
               )}
 
-              <div className="border-b border-slate-100 pb-4">
-                <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-                  <UserPlus className="w-5 h-5 text-amber-500" />
-                  소속 학교 및 상세 정보 입력
-                </h2>
-                <p className="text-xs text-slate-500 mt-1">
-                  진주시 관내 각급 학교 학교운영위원 및 교육가족 유권자 등록 절차입니다.
-                </p>
-              </div>
+              {!kakaoId ? (
+                <div className="p-8 sm:p-10 rounded-3xl bg-slate-50 border-2 border-dashed border-slate-300 text-center space-y-3 animate-in fade-in">
+                  <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-700 mx-auto flex items-center justify-center font-bold text-xl">
+                    🔒
+                  </div>
+                  <div className="space-y-1">
+                    <div className="font-black text-slate-800 text-sm sm:text-base">
+                      위 [카카오톡으로 1초 본인인증하기]를 먼저 완료해 주세요
+                    </div>
+                    <div className="text-xs text-slate-500 max-w-sm mx-auto break-keep leading-relaxed">
+                      대리 가입 방지를 위해 카카오 본인확인을 먼저 거치셔야 합니다. 터치 1번으로 성명이 자동 인증되며, 소속 학교와 직책을 선택하실 수 있는 등록 양식이 바로 열립니다.
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="border-b border-slate-100 pb-4">
+                    <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                      <UserPlus className="w-5 h-5 text-amber-500" />
+                      소속 학교 및 상세 정보 입력
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">
+                      인증된 카카오 본인 정보를 바탕으로 소속 학교와 직책을 선택해 주세요.
+                    </p>
+                  </div>
 
               {errorMsg && (
                 <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm font-semibold flex items-center gap-2.5">
@@ -633,22 +656,12 @@ function RegisterContent() {
                   />
                 </div>
 
-                {/* 본인 확인용 간편 비밀번호 */}
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-black text-slate-700 mb-1.5">
-                    본인 확인용 비밀번호 (4자 이상) <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="추후 전자투표 및 본인 인증 시 사용할 비밀번호를 설정하세요"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full p-3.5 rounded-2xl border-2 border-slate-200 text-sm font-medium focus:outline-none focus:border-indigo-500"
-                    required
-                  />
-                  <p className="text-[11px] text-slate-400 mt-1.5">
-                    * 전자투표 참여 및 1인 1표 본인 확인을 위한 간단한 암호입니다.
-                  </p>
+                {/* 보안 인증 완료 안내 (카카오 인증으로 비밀번호 불필요) */}
+                <div className="sm:col-span-2 p-4 rounded-2xl bg-emerald-50/90 border border-emerald-200 text-xs text-emerald-950 flex items-center gap-3">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                  <div className="leading-relaxed">
+                    <strong className="text-emerald-900 font-black">카카오 간편 보안 인증 완료:</strong> 안전한 카카오 OAuth 2.0 고유 식별값으로 본인이 확인되어, 별도의 비밀번호를 외우거나 입력하실 필요가 없습니다.
+                  </div>
                 </div>
               </div>
 
@@ -691,6 +704,8 @@ function RegisterContent() {
                   </>
                 )}
               </button>
+                </>
+              )}
             </form>
           )}
         </div>
