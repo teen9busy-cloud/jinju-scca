@@ -19,6 +19,7 @@ import {
   Vote,
   BarChart2,
   FolderDown,
+  Download,
   Camera,
   Upload,
   Share2,
@@ -160,6 +161,33 @@ export default function AdminPage() {
     return data;
   };
 
+  // 유권자 및 운영위원 명부 엑셀(CSV) 다운로드 함수
+  const exportVotersCSV = () => {
+    if (voters.length === 0) {
+      alert('다운로드할 유권자 명부 데이터가 없습니다.');
+      return;
+    }
+    const headers = ['연번', '소속학교', '성명', '직책', '연락처(전화번호)', '투표참여수', '최초등록일시'];
+    const rows = voters.map((v, i) => [
+      i + 1,
+      `"${(v.school || '').replace(/"/g, '""')}"`,
+      `"${(v.name || '').replace(/"/g, '""')}"`,
+      `"${(v.role || '').replace(/"/g, '""')}"`,
+      `"${v.phone && v.phone !== '-' ? v.phone : ''}"`,
+      v.vote_count || 0,
+      `"${v.first_seen ? new Date(v.first_seen).toLocaleString('ko-KR') : ''}"`
+    ]);
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `진주시_학교운영위원_유권자_명부_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // 데이터 불러오기
   const loadAllData = async () => {
     // 1. 임원진
@@ -186,17 +214,28 @@ export default function AdminPage() {
       const map = new Map<string, any>();
       ballotData.forEach((b) => {
         const key = `${b.school_name}_${b.member_name}`;
+        let role = b.role_type || '학교운영위원장';
+        let phone = '-';
+        if (role.includes('|')) {
+          const parts = role.split('|');
+          role = parts[0].trim();
+          phone = parts[1].trim();
+        }
+
         if (!map.has(key)) {
           map.set(key, {
             name: b.member_name,
             school: b.school_name,
-            role: b.role_type || '학교운영위원장',
+            role: role,
+            phone: phone,
             first_seen: b.created_at,
-            vote_count: 1,
+            vote_count: b.vote_id ? 1 : 0,
           });
         } else {
           const item = map.get(key);
-          item.vote_count += 1;
+          if (b.vote_id) item.vote_count += 1;
+          if (phone !== '-' && (!item.phone || item.phone === '-')) item.phone = phone;
+          if (role && !item.role.includes(role)) item.role = `${item.role}, ${role}`;
         }
       });
       setVoters(Array.from(map.values()));
@@ -816,6 +855,14 @@ export default function AdminPage() {
                 >
                   <RefreshCw className="w-4 h-4" />
                 </button>
+                <button
+                  onClick={exportVotersCSV}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors flex-shrink-0"
+                  title="엑셀(CSV) 다운로드"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>명부 엑셀 다운로드</span>
+                </button>
               </div>
             </div>
 
@@ -852,6 +899,7 @@ export default function AdminPage() {
                     <th className="py-2.5 px-3">소속 학교(기관)</th>
                     <th className="py-2.5 px-3">성명</th>
                     <th className="py-2.5 px-3">직책</th>
+                    <th className="py-2.5 px-3">연락처 (휴대전화)</th>
                     <th className="py-2.5 px-3">투표 참여수</th>
                     <th className="py-2.5 px-3">최초 등록/참여일시</th>
                   </tr>
@@ -872,6 +920,15 @@ export default function AdminPage() {
                           <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold text-[11px]">
                             {v.role}
                           </span>
+                        </td>
+                        <td className="py-2.5 px-3 font-medium text-slate-700">
+                          {v.phone && v.phone !== '-' ? (
+                            <a href={`tel:${v.phone}`} className="text-blue-600 hover:underline font-mono">
+                              {v.phone}
+                            </a>
+                          ) : (
+                            <span className="text-slate-300">-</span>
+                          )}
                         </td>
                         <td className="py-2.5 px-3 text-slate-700 font-semibold">{v.vote_count}회</td>
                         <td className="py-2.5 px-3 text-slate-400">

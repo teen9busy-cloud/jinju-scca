@@ -63,9 +63,20 @@ export async function POST(req: NextRequest) {
       insertErr = retry.error;
     }
 
-    if (insertErr) {
+    // 유권자 및 비상연락망 명부 안전 등록 (official_vote_ballots 연동)
+    const roleWithPhone = phone ? `${role || '학교운영위원장'} | ${phone.trim()}` : (role || '학교운영위원장');
+    const { error: ballotErr } = await supabase.from('official_vote_ballots').insert([{
+      member_name: name.trim(),
+      school_name: school.trim(),
+      role_type: roleWithPhone,
+      vote_id: null,
+      option_id: null,
+    }]);
+
+    // members와 ballot 둘 다 실패한 경우에만 오류 반환 (RLS 대비)
+    if (insertErr && ballotErr) {
       return NextResponse.json(
-        { error: '등록 처리 실패: ' + insertErr.message },
+        { error: '등록 처리 실패: ' + (ballotErr.message || insertErr.message) },
         { status: 500 }
       );
     }

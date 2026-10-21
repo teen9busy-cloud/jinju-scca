@@ -618,8 +618,11 @@ function RegisterContent() {
 
                 {/* 연락처 */}
                 <div>
-                  <label className="block text-xs font-black text-slate-700 mb-1.5">
-                    연락처 (선택)
+                  <label className="block text-xs font-black text-slate-700 mb-1.5 flex items-center justify-between">
+                    <span>휴대전화 번호 (선택)</span>
+                    <span className="text-[10px] text-amber-700 font-semibold bg-amber-50 px-1.5 py-0.5 rounded">
+                      협의회 공지·투표 알림용
+                    </span>
                   </label>
                   <input
                     type="tel"
@@ -649,14 +652,28 @@ function RegisterContent() {
                 </div>
               </div>
 
-              {/* 안내 및 동의 */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600 space-y-1">
-                <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  개인정보 보호 및 공정 선거 원칙
+              {/* 개인정보 수집 및 이용 동의 안내 */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/90 text-xs text-slate-700 space-y-2.5 shadow-xs">
+                <div className="font-black text-slate-900 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span>개인정보 수집 및 이용 동의 안내 (고지)</span>
+                </div>
+                <div className="text-[11px] sm:text-xs text-slate-600 space-y-1.5 leading-relaxed bg-white p-3 rounded-xl border border-slate-200/60">
+                  <div>
+                    <strong className="text-slate-800">• 수집 및 이용 목적:</strong> 진주시 학교운영위원장협의회 주요 공지 및 교육 현안 안내, 긴급 비상연락망 운영, 전자투표 유권자 자격 확인(1인 1표 보장)
+                  </div>
+                  <div>
+                    <strong className="text-slate-800">• 수집 항목:</strong> 성명, 소속 학교(기관)명, 직책, 휴대전화번호, (카카오 인증 시 고유식별값)
+                  </div>
+                  <div>
+                    <strong className="text-slate-800">• 보유 및 이용 기간:</strong> 당해 연도 위원장/임원 임기 만료 시 또는 회원 탈퇴(삭제 요청) 시 지체 없이 파기
+                  </div>
+                  <div>
+                    <strong className="text-slate-800">• 동의 권리:</strong> 귀하는 개인정보 수집에 동의를 거부할 권리가 있으며, 동의 거부 시 비상연락망 등록 및 전자투표 참여가 제한될 수 있습니다.
+                  </div>
                 </div>
                 <p className="text-[11px] text-slate-500">
-                  수집된 정보는 학교운영위원회 협의회 정관에 따른 전자투표 유권자 명부 확인 및 안건 심의 참여 자격 검증 용도로만 안전하게 활용됩니다.
+                  ※ 하단의 [운영위원 / 유권자 등록 완료] 버튼을 터치하여 등록을 진행하시면 위 개인정보 수집 및 이용 목적에 동의하신 것으로 처리됩니다.
                 </p>
               </div>
 
