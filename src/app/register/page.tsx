@@ -126,6 +126,19 @@ function RegisterContent() {
   }, [kakaoAuth, kakaoId, kakaoName, kakaoSchool, kakaoRole]);
 
   useEffect(() => {
+    const err = searchParams.get('error');
+    if (err) {
+      if (err === 'kakao_canceled') {
+        setErrorMsg('카카오 로그인이 취소되었습니다.');
+      } else if (err === 'kakao_token_failed') {
+        setErrorMsg('카카오 인증 토큰 교환에 실패했습니다. 다시 시도해 주세요.');
+      } else {
+        setErrorMsg('카카오 인증 처리 중 오류가 발생했습니다: ' + err);
+      }
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     try {
       const saved = localStorage.getItem('jinju_scca_voter');
       if (saved) {

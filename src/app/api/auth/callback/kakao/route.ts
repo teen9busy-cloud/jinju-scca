@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   }
 
   const clientId = process.env.KAKAO_CLIENT_ID || 'de08c5d8818e993f1d5b8542793f5d3a';
-  const clientSecret = process.env.KAKAO_CLIENT_SECRET || 'gRAQUUTm33rWtZynP2BWRKtlANSK94HE1';
+  const clientSecret = process.env.KAKAO_CLIENT_SECRET || 'gRAQUUTm33rWtZynP2BWRKHANSK94HE1';
 
   try {
     // 1. Exchange authorization code for access token
