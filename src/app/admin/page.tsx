@@ -213,6 +213,7 @@ export default function AdminPage() {
     if (ballotData) {
       const map = new Map<string, any>();
       ballotData.forEach((b) => {
+        if (!b.member_name || !b.school_name) return;
         const key = `${b.school_name}_${b.member_name}`;
         let role = b.role_type || '학교운영위원장';
         let phone = '-';
